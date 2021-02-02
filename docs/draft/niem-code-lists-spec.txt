@@ -1,0 +1,1979 @@
+NIEM Code Lists Specification
+
+Version 4.0
+
+November 7, 2017
+
+NIEM Technical Architecture Committee (NTAC)
+
+Abstract
+
+   This document establishes methods for using code list artifacts with NIEM information exchange specifications. It provides for the use of Genericode documents, as well as for CSV code lists. It supports the use of code lists at schema definition time, via annotations for XML Schema documents that bind schema components to code lists. It supports the use of code lists at run time, via XML Schema components for use in XML documents that bind XML data to code lists. It also includes identifiers for well-known columns that have semantics needed across the NIEM community.
+
+Authors
+
+   Webb Roberts, Georgia Tech Research Institute (<webb.roberts@gtri.gatech.edu>), Lead Author
+
+Document Status
+
+   This document is a specification product of the NIEM Technical Architecture Committee (NTAC). This version of this document is normative for the conformance targets it defines.
+
+   Updates, revisions, and errata for this specification are posted to https://github.com/NIEM/NIEM-Code-Lists-Spec. Please submit comments on this specification as issues at https://github.com/NIEM/NIEM-Code-Lists-Spec/issues.
+
+Table of Contents
+
+   The table of contents is omitted from this edition.
+
+Table of Figures
+
+   The table of figures is omitted from this edition.
+
+Table of Tables
+
+   The table of tables is omitted from this edition.
+
+1. Introduction
+
+   This document establishes methods for using code list artifacts with NIEM information exchange specifications. It provides for the use of Genericode documents, as well as for CSV code lists. It supports the use of code lists at schema definition time, via annotations for XML Schema documents that bind schema components to code lists. It supports the use of code lists at run time, via XML Schema components for use in XML documents that bind XML data to code lists. It also includes identifiers for well-known columns that have semantics needed across the NIEM community.
+
+   This specification supplements the use of XML Schema enumerations and simple types as a representation of code lists for information exchanges, which is sufficient for many use cases. The use of separate artifacts for code lists, along with annotations for XML Schema documents, has several goals and benefits, including include:
+
+      *  Highly detailed and precise code lists, including:
+
+            *  Multiple columns may be used to carry additional information about a code, or about a concept represented by a code.
+
+            *  Multiple fields in an exchange may be validated against the same code list, enabling the use of composite keys composed of values from multiple columns of a code list. This supports use cases such as validation of both make and model of a vehicle, or state and county of a location.
+
+            *  Support for relationships between codes, via the "subclass-of" column, so that one entry in a code list can described as a specialization of another entry.
+
+            *  Support for multiple languages for code definitions and other information.
+
+      *  Independent version management of code lists and XML schemas for information exchange. A single version of a code list may be used for multiple exchanges, and a single exchange specification may use multiple versions of a code list. As well, an exchange may support multiple versions of a code list simultaneously.
+
+      *  Easy updating of code lists within schema sets and operational systems.
+
+      *  A code list may be represented as a CSV spreadsheet document, enabling easy editing and importing of codes and supporting data.
+
+      *  A code list may be represented as a Genericode XML document, supporting XML approaches to metadata management, and supporting the advanced features of Genericode, including version management and composite keys.
+
+      *  Code lists may be specified at schema time, in which case code list identifiers may appear in XML Schema documents.
+
+      *  Code lists may be specified at run time, in which case code list identifiers may appear in XML messages.
+
+      *  Software for resolving code list identifiers to code list documents is included in many software platforms, via implementations of entity resolvers that use XML Catalogs.
+
+   This specification expands support for code lists, by enabling code lists to be managed independently of XML Schema documents, while still allowing them to support development of XML schemas and to be used for run-time validation. With the support of this specification, a single revision of a code list document may be used with multiple information exchange specifications. As well, a single information exchange specification may be used with multiple versions of a code list.
+
+   Features of this specification may be used in combination with other methods of representing code lists in exchanges, such as the use of enumerated values in simple types defined by XML Schema documents.
+
+   This specification describes an abstract model for code lists, and describes implementation of that model via Genericode and CSV files. Use of additional representations may be incorporated into future versions of this specification, as needed. In addition, the metadata and methods described by this document may support web service interactions for code list access, although such a mechanism is not described herein.
+
+1.1. Code list example
+
+   This section provides an example of a code list and how that code list can be integrated with XML Schemas to provide additional validation and meaning to messages. Take as an example a code list for vehicle makes and models:
+
+   Table 1-1: Example code list: vehicle makes and models
+
+      Make code|Make description|Model code|Model description|Class
+
+      FORD|Ford|FUS|Fusion|Auto
+
+      HOND|Honda|CIV|Civic|Auto
+
+      HOND|Honda|CRV|CRV|SUV
+
+      DODG|Dodge|R15|Ram 1500|Pickup
+
+      NISS|Nissan|ALT|Altima|Auto
+
+      FORD|Ford|F15|F-150|Pickup
+
+      TOYT|Toyota|COA|Corolla|Auto
+
+      FORD|Ford|500|Five Hundred|Auto
+
+      HOND|Honda|ACC|Accord|Auto
+
+      TOYT|Toyota|CAM|Camry|Auto
+
+      CHEV|Chevrolet|SLV|Silverado|Pickup
+
+      MERZ|Mercedes-Benz|500|500 Series|Auto
+
+   To take the summary from Section 2.9, Code Lists, below:
+
+      To summarize, a [code list] is a set of distinct entries with a corresponding set of columns. Each [distinct entry] contains a set of code values. Each [code value] corresponds to a distinct column in the code list. Each [column] identifies and describes the code values within the distinct entries of the code list. A [code list identifier] is a name for the code list as a whole, and a [column name] is a name of a single column within a code list.
+
+   In this example:
+
+      *  The [code list] is the table.
+
+      *  The [distinct entries] are the rows (excluding the header) that start with "FORD", "HOND", etc.
+
+      *  The [code values] are the values of the individual table cells (excluding the header), including "FORD", "Ford", "FUS", "Fusion", etc.
+
+      *  The code list [columns] are the vertical stacks "Make code", "Make description", "Model code", "Model description", and "Class". Each column has a header and a slot within each distinct entry.
+
+   What we see above is a code list, but there are things missing; in order to make code lists and their uses machine-readable and verifiable, this specification provides:
+
+      1. Machine-readable formats for code lists. This specification provides for the use of Genericode (an XML representation) and CSV files to represent code lists. It also provides a foundation for other representations of code lists, to be identified and implemented later.
+
+      2. Identifiers for code lists. This specification defines that an [absolute URI] is an identifier for a code list (as well, [Genericode] distinguishes between an identifier for a class of code lists and an identifier for a particular version of a code list). This specification also defines an [absolute URI] as an identifier for a column, and a character string value as a name of a column within a code list.
+
+      3. Mechanism for resolving code lists. This specification leverages XML Catalogs to resolve code list identifier URIs into code list documents.
+
+      4. Mechanism for identifying the use of a code list in an XML message, such that it can be identified or specified by the exchanged message itself. This specification provides several XML attributes (in the [code lists instance namespace]) that label XML element content as corresponding to code values in a code list.
+
+      5. Mechanism for identifying use of a code list in an XML Schema, such that it can be determined at IEPD development time or system load time. This specification provides a small XML vocabulary (in the [code lists schema appinfo namespace]) that annotates XML Schema component definitions, to describe correspondences between XML content and code values in a code list.
+
+      6. Matching values in an XML instance document to code list distinct entries: This specification defines matches between a code list binding and a code list. Each code list binding may result in zero or more matches to [distinct entries] in a [code list]. 
+
+1.2. Machine-readable format for a code list
+
+   This specification provides for representing code lists using CSV files and Genericode files. The code list in Table Table 1-1, Example code list: vehicle makes and models, above, may be represented as a CSV or Genericode document, as shown in Appendix D.2, Make-Model code list CSV file, below, and Appendix D.3, Make-Model code list Genericode file, below.
+
+   This specification also provides a framework for code lists that may be implemented using other formats. The syntax of code list bindings and code list use in instance documents may leverage formats other than CSV and Genericode. Future specifications may identify how other formats satisfy the code list framework defined by this document. 
+
+1.3. Identifiers for code lists
+
+   Consistent with [Genericode], this specification defines [absolute URIs] as identifiers for code lists. Each code list may have any number of identifiers, each a URI. Genericode identifies several kinds of URIs that identify a code list.
+
+   This specification also provides for the identification of columns within a code list. It defines column names as strings, whereas Genericode defines column IDs of type xs:ID. The use of strings to carry identifiers allows CSV and other non-Genericode representations for code lists.
+
+   The use of identifiers for code lists and columns is shown in the examples:
+
+      *  Appendix D.3, Make-Model code list Genericode file, below, shows URIs that identify the code list (one for the class of code list, another for the specific version of the code list). It also shows column definitions, each of which is provided an ID.
+
+      *  Appendix D.5, Extension schema with schema-time code list binding, below, shows the use of code list URIs and column names to reference a code list from an XML Schema document.
+
+      *  Appendix D.7, XML instance with run-time code list binding, below, shows the use of code list URIs and column names to reference a code list from an XML instance document.
+
+      *  Appendix D.6, XML catalog for schema-time code list binding, below, and Appendix D.9, XML catalog for run-time code list binding, below, show the use of code list URIs to identify Genericode documents.
+
+1.4. Mechanism for resolving code lists
+
+   This specification uses the mechanism defined by [XML Catalogs] to describe the resolution of [code list identifier] URIs into [code list documents]. Examples of this in use are shown in the [catalog entry files] in Appendix D.6, XML catalog for schema-time code list binding, below, and Appendix D.9, XML catalog for run-time code list binding, below. Each of these catalog files resolves the [code list identifier] "http://example.org/code-list/vehicle-make-model" to a locally available [resource] "make-model.gc", a Genericode code list document. 
+
+1.5. Identifying a code list at run time
+
+   An XML document can connect its contents to code lists using attributes that appear in the instance. This is called a run-time binding, and connects the simple content of an element to a code value in a code list. The attributes that define this connection are in the [code lists instance namespace]. They are:
+
+      *  Attribute cli:codeListURI: Carries an [absolute URI] that acts as a [code list identifier]. It identifies a code list to which the value belongs.
+
+      *  Attribute cli:codeListColumnName: Carries an xs:string that holds the name of a column within the code list, or a well-known column reference. The value of the element corresponds to a value in the identified column. This attribute may be optional; if it does not appear, the binding defaults to "#code", which is resolved to a code column, as specified for the class of code list document.
+
+      *  Attribute cli:codeListConstrainingIndicator: carries an xs:boolean that indicates whether the binding to the code list defines a constraint on the validity of the message. This attribute is optional; if it does not appear, then the binding constrains message validity. Values are:
+
+            *  true: The message is valid only if the value of the element appears in the indicated column of the indicated code list. This is the default.
+
+            *  false: The validity of the message is not affected by the occurrence of the value within the code list. This allows a code list to be used as a source of meaningful values while allowing values not in the code list to be passed.
+
+    Figure 1-1, An XML instance with run-time code list binding, below, shows an example of run-time binding It uses the attribute cli:codeListURI to connect the value of element ext:VehicleMakeCode ("DODG") to the make-model code list, and the attribute cli:codeListColumnName to connect the value to the "make" column of that code list. It also connects the value of ext:VehicleModelCode ("R15") to the "model" column of the code list.
+
+   Figure 1-1: An XML instance with run-time code list binding
+
+      <nc:Vehicle
+          xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+          xmlns:ext="http://example.org/namespace/extension-run-time"
+          xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/">
+        <ext:VehicleMakeCode
+            cli:codeListURI="http://example.org/code-list/vehicle-make-model"
+            cli:codeListColumnName="make"
+          >DODG</ext:VehicleMakeCode>
+        <ext:VehicleModelCode
+            cli:codeListURI="http://example.org/code-list/vehicle-make-model"
+            cli:codeListColumnName="model"
+          >R15</ext:VehicleModelCode>
+      </nc:Vehicle>
+      
+
+   Advantages of this strategy include:
+
+      *  The connection is established by the writer of the message, rather than the writer of the schema.
+
+      *  The connection is established at run time, rather than at the time the schemas are defined.
+
+      *  The connection to code lists is explicit in the XML instance document, rather than being defined in schemas that are not exchanged.
+
+1.6. Identifying a code list at schema time
+
+   This specification defines an annotation vocabulary, the [code lists schema appinfo namespace], which allows connections between code lists and elements, attributes, and types that are defined in an XML Schema. This is managed with two annotation elements:
+
+      *  clsa:SimpleCodeListBinding: a simple code list binding connects the simple content of an element or the value of an attribute to a code list. It is added to a schema component definition as an appinfo annotation. A simple code list binding may be attached to top-level attribute declarations, element declarations, simple type definitions, and complex type definitions. It has the following attributes:
+
+            *  Attribute codeListURI identifies the code list.
+
+            *  Attribute columnName identifies the code list column, or a well-known column reference.
+
+            *  Attribute constrainingIndicator indicates whether the existence (or absence) of a value in a code list impacts validity of the instance XML document.
+
+      *  clsa:ComplexCodeListBinding: a complex code list binding on a complex type or element connects child elements to columns of a code list. Like a simple code list binding, it is added as a schema annotation on schema component definitions. It may be added to a top-level element declaration, or to a named complex type definition. It has the following parts:
+
+            *  Attribute codeListURI identifies the code list.
+
+            *  Attribute constrainingIndicator indicates whether the existence (or absence) of a value in a code list impacts validity of the instance XML document.
+
+            *  Element clsa:ElementCodeListBinding attaches child elements to columns of the code list. It has attributes:
+
+                  *  Attribute elementName provides the name of an element whose value is connected to a code list.
+
+                  *  Attribute columnName provides the name of a column of the code list, or a well-known column reference.
+
+   Figure 1-2, XML instance using schema-time code list binding, below, shows an instance that uses schema-time binding. The instance does not carry any information about code lists; it does not have a code list identifier, nor does it have a column name. The instance is simple.
+
+   Figure 1-2: XML instance using schema-time code list binding
+
+      <ext:Vehicle
+        <ext:VehicleMakeCode>DODG</ext:VehicleMakeCode>
+        <ext:VehicleModelCode>R15</ext:VehicleModelCode>
+      </ext:Vehicle>
+      
+
+   The simple code list binding in Figure 1-3, XML schema defining a simple code list binding, below, connects the content of VehicleMakeCode to the code list's "make" column.
+
+   Figure 1-3: XML schema defining a simple code list binding
+
+      <xs:element name="VehicleMakeCode" type="niem-xs:token"
+                  substitutionGroup="nc:VehicleMakeAbstract">
+        <xs:annotation>
+          <xs:documentation>A code for a manufacturer of a vehicle.</xs:documentation>
+          <xs:appinfo>
+            <clsa:SimpleCodeListBinding
+                codeListURI="http://example.org/code-list/vehicle-make-model"
+                columnName="make"/>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:element>
+      
+
+   The complex code list binding in Figure 1-4, XML schema defining a complex code list binding, below, connects nc:VehicleMake and nc:VehicleModel child elements of element Vehicle to the code list:
+
+      *  It connects the nc:VehicleMake element (or an element substitutable for nc:VehicleMake) to the column named "make".
+
+      *  It connects the nc:VehicleModel element (or an element substitutable for nc:VehicleModel) to the column named "model".
+
+   Figure 1-4: XML schema defining a complex code list binding
+
+      <xs:element name="Vehicle" type="nc:VehicleType"
+                  substitutionGroup="nc:Vehicle">
+        <xs:annotation>
+          <xs:appinfo>
+            <clsa:ComplexCodeListBinding
+                codeListURI="http://example.org/code-list/vehicle-make-model">
+              <clsa:ElementCodeListBinding elementName="ext:VehicleMakeCode"
+                                           columnName="make"/>
+              <clsa:ElementCodeListBinding elementName="ext:VehicleModelCode"
+                                           columnName="model"/>
+            </clsa:ComplexCodeListBinding>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:element>
+      
+
+   Advantages of this strategy include:
+
+      *  Simplicity: Instance documents that don't specify code list bindings are simpler than those that do. When the schema defines the code list binding, the instance documents do not need to carry the code list connection attributes, making them much less verbose.
+
+      *  Trust: connections to code lists are not defined by untrusted messages. The connections between the instances and code lists are defined as part of the schema of the message.
+
+      *  Multiple bindings: a single value in an instance XML document be connected to multiple code lists in different ways. This is done by defining multiple code list bindings for elements, attributes, or types in the XML Schema that defines the value.
+
+      *  Multiple columns: multiple child elements may be connected to multiple columns in a code list. For example, from Appendix D.8, Extension schema with run-time code list binding, below, this annotation on a vehicle type connects the make and model fields of the vehicle to the make and model columns of a code list:
+
+2. Terminology
+
+   This document relies on terminology defined by other specifications and standards, as well as terminology specific to this specification. This section introduces many terms, and directs the reader to the external source definition of a term when appropriate. The following sections reflect the different sources and topics of this terminology:
+
+   * Section 2.1, RFC 2119: Key words for use in RFCs to Indicate Requirement Levels
+   * Section 2.2, RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
+   * Section 2.3, XML
+   * Section 2.4, XML Namespaces
+   * Section 2.5, XML Information Set
+   * Section 2.6, XML Schema
+   * Section 2.7, Conformance Targets Attribute Specification
+   * Section 2.8, NIEM Naming and Design Rules
+   * Section 2.9, Code Lists
+   * Section 2.10, RFC 4180: Comma-separated values (CSV) files
+   * Section 2.11, XML Catalogs
+
+2.1. RFC 2119: Key words for use in RFCs to Indicate Requirement Levels
+
+   Within normative content (rules and definitions), the key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC2119].
+
+2.2. RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
+
+   [RFC3986] defines uniform resource identifier (URI), which it describes as:
+
+      A Uniform Resource Identifier (URI) is a compact sequence of characters that identifies an abstract or physical resource.
+
+   The term absolute URI is as defined by [RFC3986] Section 4.3, Absolute URI, identifying a uniform resource identifier that matches the grammar production absolute-URI.
+
+   The term resource is defined by [RFC3986] Section 1.1, Overview of URIs, which states:
+
+      This specification does not limit the scope of what might be a resource; rather, the term "resource" is used in a general sense for whatever might be identified by a URI. Familiar examples include an electronic document, an image, a source of information with a consistent purpose (e.g., "today's weather report for Los Angeles"), a service (e.g., an HTTP-to-SMS gateway), and a collection of other resources.
+
+2.3. XML
+
+   The term XML document is defined by [XML] Section 2, Documents, which states:
+
+      A data object is an XML document if it is well-formed, as defined in this specification.
+
+2.4. XML Namespaces
+
+   This document uses XML Namespaces as defined by [XMLNamespaces].
+
+   The following namespace prefixes are used consistently within this specification. These prefixes are not normative; this document issues no requirement that these prefixes be used in any conformant artifact. Although there is no requirement for a schema or XML document to use a particular namespace prefix, the meaning of the following namespace prefixes have fixed meaning in this document.
+
+      *  xs ("XML Schema"): The namespace for the XML Schema definition language as defined by [XMLSchema1] and [XMLSchema2]: "http://www.w3.org/2001/XMLSchema".
+
+      *  ct ("conformance targets"): The namespace defined by [CTAS] for the ct:conformanceTargets attribute: "http://release.niem.gov/niem/conformanceTargets/3.0/".
+
+      *  cli ("code lists instance"): Defined by this specification, the code lists instance namespace defines attributes that connect XML element content to code lists at run time: "http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/". The XML schema document defining this namespace is provided in Appendix B, XML Schema document for the code lists instance namespace, below.
+
+      *  clsa ("code list schema appinfo"): Defined by this specification, the code lists schema appinfo namespace defines an XML vocabulary for use in xs:appinfo on XML Schema component definitions, which connect XML element and attribute content to code lists: "http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-schema-appinfo/". The XML schema document defining this namespace is provided in Appendix C, XML Schema document for the code list schema appinfo namespace, below.
+
+      *  gc ("Genericode"): The namespace for the XML vocabulary for Genericode, as defined by [Genericode]: "http://docs.oasis-open.org/codelist/ns/genericode/1.0/".
+
+2.5. XML Information Set
+
+   This document refers to content of XML documents using terms from [XML Infoset]. Terminology adapted from [XML Infoset] includes:
+
+      *  The term element refers to an element information item as defined by [XML Infoset] Section 2.2, Element Information Items.
+
+      *  The term attribute refers to an attribute information item as defined by [XML Infoset] Section 2.3, Attribute Information Items.
+
+      *  The term text refers to the encapsulation of a series of character information items, as defined by defined by [XML Infoset] Section 2.6, Character Information Items. A text item aggregates all contiguous character information items that have the same parent node.
+
+      *  Properties of information items used by this document include:
+
+            *  [namespace name] and [local name] of an element or attribute
+
+            *  [parent] of an element
+
+            *  [attributes] of an element
+
+      *  An information item that is identified by a qualified name is referring to the [namespace name] corresponding to the qualified name's prefix assigned value or namespace URI, and [local name] corresponding to the qualified name's local name.
+
+2.6. XML Schema
+
+   This specification provides definitions and mechanisms that may be used within XML Schemas and individual XML Schema documents for validation of information exchanges. To define these mechanisms, terminology from the XML Schema specification must be clarified.
+
+   Terms adapted from [XMLSchema1] include:
+
+      *  The term XML Schema definition language is defined by [XMLSchema1] subsection Abstract, which states:
+
+            XML Schema: Structures specifies the XML Schema definition language, which offers facilities for describing the structure and constraining the contents of XML 1.0 documents, including those which exploit the XML Namespace facility. The schema language, which is itself represented in XML 1.0 and uses namespaces, substantially reconstructs and considerably extends the capabilities found in XML 1.0 document type definitions (DTDs).
+
+      *  The term XML Schema is defined by [XMLSchema1] Section 2.2, XML Schema Abstract Data Model, which states:
+
+            An XML Schema is a set of schema components.
+
+      *  The term schema component is defined by [XMLSchema1] Section 2.2, XML Schema Abstract Data Model, which states:
+
+            Schema component is the generic term for the building blocks that comprise the abstract data model of the schema.
+
+      *  The term schema document is defined by [XMLSchema1] Section 3.1.2, XML Representations of Components, which states:
+
+            A document in this form (i.e. a <schema> element information item) is a schema document.
+
+      *  The term normalized value is defined by [XMLSchema1] Section 3.1.4, White Space Normalization during Validation.
+
+      *  The term attribute declaration is defined by [XMLSchema1] Section 2.2.2.3, Attribute Declaration.
+
+      *  The term element declaration is defined by [XMLSchema1] Section 2.2.2.1, Element Declaration.
+
+      *  The substitution group of an element declaration is defined by [XMLSchema1] Section 3.3.6, Constraints on Element Declaration Schema Components.
+
+      *  The term type definition is defined by [XMLSchema1] Section 2.2.1, Type Definition Components.
+
+      *  The term simple type definition is defined by [XMLSchema1] Section 2.2.1.2, Simple Type Definition.
+
+      *  The term complex type definition is defined by [XMLSchema1] Section 2.2.1.3, Complex Type Definition.
+
+      *  The term schema-valid refers to "valid" as defined by [XMLSchema1] Section 2.1, Overview of XML Schema.
+
+         Note that a requirement for XML content to be schema-valid does not imply or require that validation against XML Schemas must actually occur at run time. Rather, it means that the XML content that is required to be schema-valid must be composed such that it would be assessed as valid were schema validity assessment to take place. Schema validity may be described in terms of a schema document, in which case validity should be considered as strictly assessed against the namespaces defined by that schema document.
+
+      *  A type $derived is derived from a type $base if and only if type $derived is validly derived from type $base for {extension, restriction} as defined by [XMLSchema1] Section 3.4.6, Constraints on Complex Type Definition Schema Components, subsection Schema Component Constraint: Type Derivation OK (Complex) and Section 3.14.6, Constraints on Simple Type Definition Schema Components, subsection Schema Component Constraint: Type Derivation OK (Simple).
+
+         Note that this means that a type can be said to be derived from itself.
+
+   The XML Schema defines properties of schema components, including:
+
+      *  {type definition} of an [attribute declaration], as defined by [XMLSchema1] Section 3.2.1, The Attribute Declaration Schema Component
+
+      *  {type definition} of an [element declaration], as defined by [XMLSchema1] Section 3.3.1, The Element Declaration Schema Component
+
+   The XML Schema specification defines additional properties of information set information items as part of the post-schema-validation infoset (PSVI). These properties include:
+
+      *  [attribute declaration] of an [attribute], as defined by [XMLSchema1] Section 3.2.5, Attribute Declaration Information Set Contributions
+
+      *  [element declaration] of an [element], as defined by [XMLSchema1] Section 3.3.5, Element Declaration Information Set Contributions
+
+      *  [type definition] of an [element], as defined by [XMLSchema1] Section 3.3.5, Element Declaration Information Set Contributions
+
+   To facilitate code lists representing ranges of values as described in Section 7.5, Columns supporting ranges of values, below, the following terms are adapted from [XMLSchema2], Section 4.2, Fundamental Facets, Subsection 4.2.1, bounded:
+
+      *  The term inclusive upper bound is as defined by [XMLSchema2] Section 4.2.1, bounded.
+
+      *  The term exclusive upper bound is as defined by [XMLSchema2] Section 4.2.1, bounded.
+
+      *  The term inclusive lower bound is as defined by [XMLSchema2] Section 4.2.1, bounded.
+
+      *  The term exclusive lower bound is as defined by [XMLSchema2] Section 4.2.1, bounded.
+
+   See also Section 2.8, NIEM Naming and Design Rules, below, for the term [XML Schema document set].
+
+2.7. Conformance Targets Attribute Specification
+
+   [CTAS] defines several terms used normatively within this specification.
+
+   The term conformance target is defined by [CTAS] Section 3.1, Conformance Target Defined which states:
+
+      A conformance target is a class of artifact, such as an interface, protocol, document, platform, process or service, that is the subject of conformance clauses and normative statements. There may be several conformance targets defined within a specification, and these targets may be diverse so as to reflect different aspects of a specification. For example, a protocol message and a protocol engine may be different conformance targets.
+
+   The term conformance target identifier is defined by [CTAS] Section 3.1, Conformance Target Defined, which states:
+
+      A conformance target identifier is an internationalized resource identifier that uniquely identifies a conformance target.
+
+   The term effective conformance target identifier is defined by [CTAS] Section 4, Semantics and Use, which states:
+
+      An effective conformance target identifier of a conformant document is an internationalized resource identifier reference that occurs in the document's effective conformance targets attribute.
+
+2.8. NIEM Naming and Design Rules
+
+   The term application information (of a [schema component]) is defined by [NIEM NDR] Section 10.9, Machine-readable annotations, describing the contents of xs:appinfo annotations on the element that defines a schema component.
+
+   The term XML Schema document set is defined by [NIEM NDR] Section 3.4, XML Schema terminology, which states:
+
+      An XML Schema document set is a set of schema documents that together define an XML Schema suitable for assessing the validity of an XML document.
+
+2.9. Code Lists
+
+   To facilitate the use of code lists, this document must define some terms related to code lists and their use. [Genericode] is the source of some of this terminology, although in this specification much of this terminology refers to code lists in the abstract, rather than only as concrete Genericode documents.
+
+   [Definition: code list]
+
+      A code list is a set of [distinct entries] with a corresponding set of [columns]. A code list may be thought of as a table, with table rows as distinct entries, table columns as code list columns, and individual cells as [code values].
+
+   [Definition: distinct entry]
+
+      A distinct entry is a single conceptual entity within a [code list]. It is composed of a set of [code values], each corresponding to a [column] of the code list. It may be thought of as a row of a table, where each individual cell of a row corresponds to a column of the table.
+
+   [Definition: code value]
+
+      A code value is a single data value within a [distinct entry] in a [code list]. Each code value of a distinct entry corresponds to a [column] of the code list.
+
+   [Genericode] uses the term "value" to refer to a data item that corresponds to a column within a distinct entry. "Value" is a very common word, with broadly-understood meaning, and using it by itself, but with a very specialized meaning, would be misconstrued in many cases. For that reason, this document prefers the term [code value] when referring to a value of a [distinct entry].
+
+   [Definition: column]
+
+      A column of a [code list] is metadata that describes a [code value] within each [distinct entry] of the code list. Each code value within the code list corresponds to one column of the code list.
+
+   [Definition: code list identifier]
+
+      A code list identifier is an [absolute URI] that identifies a [code list].
+
+   This document defines two designators for a column of a code list, the [column identifier] and the [column name].
+
+   [Definition: column identifier]
+
+      A column identifier is an [absolute URI] that identifies a [column] of a [code list].
+
+   A [column identifier] identifies a column irrespective of the specific code list in which it occurs. [Genericode] defines CanonicalUri and CanonicalVersionUri that are column identifiers, which it provides for assigning universal semantics to code list columns.
+
+   [Definition: column name]
+
+      A column name is a character string value that identifies a [column] within the scope of a [code list].
+
+   A [column name] is a text (character string) value that identifies a column, only within the scope of a specific code list. A column within a [Genericode code list document] has an XML ID that uniquely identifies it within the document.
+
+   Note that all of the above definitions are abstract. They do not get into the details of Genericode, (e.g., canonical URIs, version URIs, location URIs, ColumnRefs, ColumnSets, and KeyRefs). These terms and identifiers are generically defined here so that they may be applied to CSV and Genericode documents, or to other methods of expressing code lists, including other data file formats and registry-based services.
+
+   To summarize, a [code list] is a set of distinct entries with a corresponding set of columns. Each [distinct entry] contains a set of code values. Each [code value] corresponds to a distinct column in the code list. Each [column] identifies and describes the code values within the distinct entries of the code list. A [code list identifier] is a name for the code list as a whole, and a [column name] is a name of a single column within a code list.
+
+   Further, this document defines the terms [code list document], [CSV code list document], and [Genericode code list document]. These are [conformance targets] of this specification. A [code list document] is a file, document or other [resource] that carries one or more code lists. A [CSV code list document] is a [code list document] that uses comma-separated values format defined by [RFC4180]. A [Genericode code list document] is a [code list document] that uses syntax defined by [Genericode].
+
+2.10. RFC 4180: Comma-separated values (CSV) files
+
+   This document uses the definition of CSV files as defined by [RFC4180]. The following terms take their definitions from the ABNF (Augmented Backus-Naur Form) grammar defined by Section 2, Definition of the CSV Format of that specification.
+
+      *  A CSV file is a [resource] matching rule "file" of the ABNF grammar.
+
+      *  A CSV header is the portion of a [CSV file] matching rule "header" of the ABNF grammar, and which provides names of columns within the CSV file.
+
+      *  A CSV column name is the portion of a [CSV file] matching rule "name" of the ABNF grammar.
+
+      *  A CSV record is the portion of a [CSV file] matching rule "record" of the ABNF grammar.
+
+      *  A CSV field is the portion of a [CSV file] matching rule "field" of the ABNF grammar.
+
+2.11. XML Catalogs
+
+   This document relies on [XML Catalogs] for the mechanisms for identifying and finding a code list from its [code list identifier].
+
+   The term entity catalog is defined by [XML Catalogs], which states in [XML Catalogs] Section 3, An Entity Catalog:
+
+      The catalog is effectively an ordered list of (one or more) catalog entry files. It is up to the application to determine the ordered list of catalog entry files to be used as the logical catalog.
+
+   The resources (i.e., files) that are within the same local cache, ZIP file, or other contained location as an entity catalog are the local context of the entity catalog.
+
+   The term catalog entry file is defined by [XML Catalogs] Section 2, Terminology, which states:
+
+      A catalog may be physically contained in one or more catalog entry files. A catalog entry file is a document that contains a set of catalog entries.
+
+   The term resolve refers to the process of resolving URI references, as described by [XML Catalogs] Section 7.2.2, Resolution of URI references, which defines the process for resolving a URI reference to a URI for a corresponding resource, as identified by an entity catalog.
+
+   [Definition: locally-resolved resource]
+
+      A locally-resolved resource for a [URI] relative to an entity catalog is the [resource] yielded through the process of [resolving] the URI into a resource URI using the entity catalog, and then producing the corresponding resource from the [local context] of the entity catalog.
+
+3. Conformance targets
+
+   This document defines multiple [conformance targets]. Each conformance target is defined normatively by this specification. Each conformance target has an associated abbreviation, which is used to identify to which conformance targets a rule applies.
+
+   Table 3-1: Codes representing conformance targets
+
+      Code|Conformance target
+
+      CLD|[code list document]
+
+      GC-CLD|[Genericode code list document]
+
+      CSV-CLD|[CSV code list document]
+
+      XSD|[code list-enabled schema document]
+
+      INS|[code list-enabled instance document]
+
+      VSET|[code list validation set]
+
+3.1. Code list document
+
+   [Definition: code list document]
+
+      A code list document is a file or [resource] that contains one or more [code lists]. It is a [conformance target] of this specification. A code list document MUST conform to all rules of this specification that apply to this conformance target. An [XML document] with an [effective conformance target identifier] of http://reference.niem.gov/niem/specification/code-lists/4.0/#CodeListDocument MUST be a code list document.
+
+   The specification for an implementation of a code list document by a class of [resource] (such as with Genericode or CSV) needs to specify the following characteristics:
+
+      1. Candidate [code list identifiers]. Some code list documents specify what URIs may be used to reference the code list. Some [resources] may feature multiple code lists within a single resource, and the specification must describe how a specific code list is identified within the resource.
+
+      2. The mapping between features of the resource and [distinct entries].
+
+      3. The mapping between features of the resource and [code values].
+
+      4. The mapping between features of the resource and [column names].
+
+      5. The method of identifying a column as being a well-known column (described in Section 7, Well-known columns and references, below).
+
+      6. The method of identifying well-known column reference "#code" (described in Section 7, Well-known columns and references, below).
+
+      7. The method of identifying the data type of a code value, which can be a data type defined by an XML Schema, or empty.
+
+   These characteristics are described for Genericode files in Section 6, Genericode code lists, below. They are described for CSV files in Section 5, Comma-separated values (CSV) code lists, below.
+
+3.2. Genericode code list document
+
+   [Definition: Genericode code list document]
+
+      A Genericode code list document is a [code list document]. It is a [conformance target] of this specification. A Genericode code list document MUST conform to all rules of this specification that apply to this conformance target. The [conformance target identifier] for this conformance target is http://reference.niem.gov/niem/specification/code-lists/4.0/#GenericodeCodeListDocument.
+
+   Section 6, Genericode code lists, below, provides rules for Genericode code list documents.
+
+3.3. CSV code list document
+
+   [Definition: CSV code list document]
+
+      A CSV code list document is a [code list document]. It is a [conformance target] of this specification. A CSV code list document MUST conform to all rules of this specification that apply to this conformance target. The [conformance target identifier] for this conformance target is http://reference.niem.gov/niem/specification/code-lists/4.0/#CSVCodeListDocument.
+
+3.4. Code list-enabled schema document
+
+   [Definition: code list-enabled schema document]
+
+      A code list-enabled schema document is an XML Schema document that supports the use of [code list documents] for validation and meaning. It is a [conformance target] of this specification. A code list-enabled schema document MUST conform to all rules of this specification that apply to this conformance target. The conformance target identifier for this conformance target is http://reference.niem.gov/niem/specification/code-lists/4.0/#SchemaDocument.
+
+Rule 3-1. Code list-enabled schema document has conformance target
+
+   [Rule 3-1] (XSD)
+
+      A [code list-enabled schema document] MUST have an [effective conformance target identifier] of http://reference.niem.gov/niem/specification/code-lists/4.0/#SchemaDocument 
+
+Rule 3-2. Document with conformance target is a code list-enabled schema document
+
+   [Rule 3-2] (VSET)
+
+      A [resource] with an [effective conformance target identifier] of http://reference.niem.gov/niem/specification/code-lists/4.0/#SchemaDocument MUST be a [code list-enabled schema document].
+
+3.5. Code list-enabled instance document
+
+   [Definition: code list-enabled instance document]
+
+      A code list-enabled instance document is an XML document that leverages this specification to connect data values with code lists. A code list-enabled instance document MUST conform to all rules of this specification that apply to this conformance target. An [XML document] with an [effective conformance target identifier] of http://reference.niem.gov/niem/specification/code-lists/4.0/#InstanceDocument MUST be a [code list-enabled instance document].
+
+   Although this specification defines a conformance target identifier for a code list-enabled instance document, it does not require the conformance target identifier to appear within an instance document.
+
+3.6. Code list validation set
+
+   A code list validation set is an abstract concept that brings together the necessary components to define validity of XML documents with respect to code lists, and to identify correspondences between XML data and code list distinct entries. There may be multiple code list validation sets in use at any point of a validation or analysis process; it is a concept meant to facilitate working with code lists.
+
+   [Definition: code list validation set]
+
+      A code list validation set is an abstraction that contains one or more of:
+
+         *  The instance, a [code list-enabled instance document]
+
+         *  The catalog, an [entity catalog], with its [local context]
+
+         *  The schema, an [XML Schema], and
+
+         *  A [code list document]
+
+4. Binding XML content to code lists
+
+   XML content in a message may be identified as corresponding to content of a code list. This correspondence is referred to as a [code list binding], connecting the XML content to the code list. This specification provides methods for binding XML content to code lists in two ways:
+
+      *  At run time: An XML document may use identifiers within a message to identify correspondence of content to code lists. This is introduced in Section 1.5, Identifying a code list at run time, above, and details are provided in Section 4.4, Run-time binding, below.
+
+      *  At schema time: An XML Schema document may use application information annotations that identify code lists corresponding to the content of schema components. This is introduced in Section 1.6, Identifying a code list at schema time, above, and details are provided in Section 4.4, Run-time binding, below.
+
+4.1. Multiple bindings
+
+   Code list bindings should be seen as additional semantics and validation for parts of a message. A particular piece of XML content may be bound to multiple code lists at the same time.
+
+   For example, a message may contain elements for "vehicle make" and "vehicle model". These values may have multiple bindings, including:
+
+      *  The "vehicle make" element may be bound to a code list containing vehicle manufacturers.
+
+      *  The "vehicle model" element may be bound to a code list containing vehicle models.
+
+      *  The pair, together, of "vehicle make" and "vehicle model" may be bound to a code list identifying a complete list of all known valid vehicle make and model combinations.
+
+      *  The pair, together, may be bound to a code list identifying only valid make and model combinations of vehicles with diesel engines, which were manufactured in the United States. This represents an intentional subset of all known combinations.
+
+4.2. Binding by URI
+
+   Content is bound to a code list using a URI as the identifier of the code list. This identifier may be any of the following:
+
+      *  A canonical URI, as defined by [Genericode]. This identifies the code list in general, and it may be satisfied by the latest version of the code list, or some other version, as determined by the information exchange developer.
+
+      *  A canonical version URI, as defined by [Genericode]. This identifies a specific version of the code list, as implemented by a particular Genericode document.
+
+      *  A location URI for a Genericode document. This identifies a particular Genericode document by a resolvable URL.
+
+      *  Some other URI, identifying some other source of code list semantics. Although this specification is focused on leveraging concrete local code list documents, the mechanisms this specification provides may be used to express a dependence on registry-maintained code lists, or on other network-based semantics. The URI is just an identifier, and may have a well-known semantic within a community. Such semantics should be identified within documentation in an information exchange.
+
+4.3. Definition of code list binding
+
+   A code list binding brings together a set of columns from a code list with a corresponding set of data from an XML document. The binding can provide meaning for data in an XML document, and can provide additional validity constraints on an XML document. The code list binding defined here is an abstract concept, bringing together a code list (via a [code list identifier]), [column names], and data values (such as from an information exchange package or other XML document). This abstract definition is leveraged in Section 4.4, Run-time binding, below, and Section 4.5, Schema-time binding, below.
+
+   A code list binding may be applied to a single value or to multiple values. The abstract definition of [code list binding] is applied to the concrete mechanisms for binding data values to code lists, through run-time binding or schema-time binding.
+
+   [Definition: code list binding]
+
+      A code list binding is an assigned correspondence between a set of data values, such as data within an XML document, and a set of columns within a code list, identified via a [code list identifier] and a set of [column names].
+
+      A code list binding has the following properties:
+
+         *  a [code list identifier]
+
+         *  a set of column/value pairs, each having:
+
+               *  a column reference: either a [column name] or a well-known column reference, and
+
+               *  a data value
+
+         *  A boolean value, constraining.
+
+4.4. Run-time binding
+
+   This document provides an XML Schema document for run-time binding of XML content to code lists. This schema is provided in Appendix B, XML Schema document for the code lists instance namespace, below.
+
+4.4.1. Syntax for run-time code list binding
+
+Rule 4-1. Content in the "cli" namespace conforms to schema
+
+   [Rule 4-1] (INS)
+
+      Any XML content in the namespace http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/ MUST be [schema-valid] to the XML Schema definitions contained in the schema document in Appendix B, XML Schema document for the code lists instance namespace.
+
+Rule 4-2. Code list URI is an absolute URI
+
+   [Rule 4-2] (INS)
+
+      The [normalized value] of an [attribute] cli:codeListURI MUST be an [absolute URI].
+
+Rule 4-3. Column identifier accompanied by code list identifier
+
+   [Rule 4-3] (INS)
+
+      An [element] having an attribute cli:codeListColumnName MUST have an attribute cli:codeListURI.
+
+Rule 4-4. Constraining indicator accompanied by code list identifier
+
+   [Rule 4-4] (INS)
+
+      An [element] having an attribute cli:codeListConstrainingIndicator MUST have an attribute cli:codeListURI.
+
+4.4.2. Run-time effective code list binding
+
+Rule 4-5. Effective run-time binding.
+
+   [Rule 4-5] (INS)
+
+      An element $element with an attribute $attribute cli:codeListURI denotes a code list binding of:
+
+         *  a [code list identifier] of the [normalized value] of the attribute cli:codeListURI
+
+         *  a single column/value pair, having:
+
+               *  a column reference of: if $element has attribute cli:codeListColumnName, then the [normalized value] of that attribute, else "#code".
+
+               *  a data value that is the [normalized value] of $element.
+
+         *  A value for constraining that is: if $element has attribute cli:codeListConstrainingIndicator, then its value, otherwise true.
+
+4.5. Schema-time binding
+
+   This document provides XML elements for annotating XML Schema document components, to indicate, at schema time, a code list binding between a code list and one or more data values of the code list.
+
+4.5.1. Syntax for schema-time code list binding
+
+Rule 4-6. Content in the "clsa" namespace conforms to schema
+
+   [Rule 4-6] (XSD)
+
+      Any XML content in the namespace http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-schema-appinfo/ MUST be [schema-valid] to the XML Schema definitions contained in the schema document in Appendix C, XML Schema document for the code list schema appinfo namespace.
+
+Rule 4-7. Elements are xs:appinfo annotations
+
+   [Rule 4-7] (XSD)
+
+      An element clsa:SimpleCodeListBinding or clsa:ComplexCodeListBinding MUST have [parent] element xs:appinfo.
+
+Rule 4-8. Code list URI is absolute URI
+
+   [Rule 4-8] (XSD)
+
+      An attribute codeListURI that has [owner element] of clsa:SimpleCodeListBinding or clsa:ComplexCodeListBinding MUST have a [normalized value] that is an [absolute URI].
+
+Rule 4-9. Simple code list binding to schema components
+
+   [Rule 4-9] (XSD)
+
+      Element clsa:SimpleCodeListBinding MUST be [application information] on one of:
+
+         *  element xs:attribute that defines a global [attribute declaration]
+
+         *  element xs:element that defines a global [element declaration]
+
+         *  element xs:simpleType that defines a global [simple type definition]
+
+         *  element xs:complexType that defines a global [complex type definition]
+
+Rule 4-10. Complex code list binding to schema components
+
+   [Rule 4-10] (XSD)
+
+      Element clsa:ComplexCodeListBinding MUST be [application information] on one of:
+
+         *  element xs:element that defines a global [element declaration]
+
+         *  element xs:complexType that defines a global [complex type definition]
+
+4.5.2. Simple binding of schema components
+
+Rule 4-11. Attribute declaration effective simple binding
+
+   [Rule 4-11] (VSET)
+
+      An element xs:attribute defining an [attribute declaration] $attribute-declaration with [application information] of an element $binding-element clsa:SimpleCodeListBinding entails:
+
+         *  Each [attribute] $attribute in the instance of the [code list validation set] with [attribute declaration] equal to $attribute-declaration entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A column/value pair with:
+
+                     *  A column reference of: if $binding-element has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                     *  A data value that is the [normalized value] of $attribute
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+Rule 4-12. Element declaration effective simple binding
+
+   [Rule 4-12] (VSET)
+
+      An element xs:element defining an [element declaration] $element-declaration with [application information] of an element $binding-element clsa:SimpleCodeListBinding entails:
+
+         *  Each [element] $element in the instance of the [code list validation set] with [element declaration] that is in the [substitution group] of $element-declaration entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A column/value pair with:
+
+                     *  A column reference of: if $binding-element has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                     *  A data value that is the [normalized value] of $element
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+Rule 4-13. Type definition effective simple binding
+
+   [Rule 4-13] (VSET)
+
+      An element xs:simpleType or xs:complexType defining a [type definition] $type-definition with [application information] of an element $binding-element clsa:SimpleCodeListBinding entails:
+
+         *  Each [attribute] $attribute in the instance of the [code list validation set] with [attribute declaration] with {type definition} [derived] from $type-definition entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A column/value pair with:
+
+                     *  A column reference of: if $binding-element has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                     *  A data value that is the [normalized value] of $attribute
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+         *  Each [element] $element in the instance of the [code list validation set] with [type definition] [derived] from $type-definition entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A column/value pair with:
+
+                     *  A column reference of: if $binding-element has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                     *  A data value that is the [normalized value] of $element
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+4.5.3. Complex binding of schema components
+
+Rule 4-14. Element declaration effective complex binding
+
+   [Rule 4-14] (VSET)
+
+      An element xs:element defining an [element declaration] $element-declaration with [application information] of an element $binding-element clsa:ComplexCodeListBinding entails:
+
+         *  Each [element] $element in the instance of the [code list validation set] with [element declaration] that is in the [substitution group] of $element-declaration entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A set of column/value pairs, containing: For each clsa:ElementCodeListBinding child $element-binding of $binding-element:
+
+                     *  A column/value pair with:
+
+                           *  A column reference of: if $element-binding has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                           *  A data value that is: if it exists, the first element child of $element that is in the [substitution group] of an [element declaration] with a name that is equal to the value of attribute elementName of $element-binding, otherwise empty.
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+Rule 4-15. Complex type definition effective complex binding
+
+   [Rule 4-15] (VSET)
+
+      An element xs:complexType defining a [complex type definition] $type-definition with [application information] of an element $binding-element clsa:ComplexCodeListBinding entails:
+
+         *  Each [element] $element in the instance of the [code list validation set] with [type definition] [derived] from $type-definition entails a [code list binding] with:
+
+               *  A [code list identifier] that is the [normalized value] of the attribute codeListURI of $binding-element.
+
+               *  A list of column/value pairs, containing: For each clsa:ElementCodeListBinding child $element-binding of $binding-element:
+
+                     *  A column/value pair with:
+
+                           *  A column reference of: if $element-binding has attribute columnName, then the [normalized value] of that attribute, else "#code".
+
+                           *  A data value that is: if it exists, the first element child of $element that is in the [substitution group] of an [element declaration] with a name that is equal to the value of attribute elementName of $element-binding, otherwise empty.
+
+               *  A value for constraining that is: if $binding-element has attribute constrainingIndicator, then its value, otherwise true.
+
+4.6. Matches for code list bindings
+
+   A [code list binding] defined against a code list document may be matched to zero or more [distinct entries] within the code list. The process of finding matches for a code list binding $binding against a [code list validation set] is defined by the following rule.
+
+Rule 4-16. Matches and validity for a code list binding
+
+   [Rule 4-16] (VSET)
+
+      A [code list binding] matching against against a [code list validation set] yields a set of [distinct entries] and a validity value (valid or invalid).
+
+      The matches for a [code list binding] $binding against a [code list validation set] MUST be:
+
+         *  The [code list identifier] $identifier is provided by the $binding.
+
+         *  Using the [entity catalog] defined for the [code list validation set], [resolve] [code list identifier] $identifier to a [locally-resolved resource] $resource.
+
+         *  If $resource is not a [code list document], or if no resource is identified for $identifier, then this specification does not define any matches for $binding. The binding is evaluated to be invalid. In this case, the code list identified by $identifier SHOULD be handled by means other than this specification.
+
+         *  If $resource is a [code list document], then the set of matches for $binding is the list of distinct entries in the code list for which every column referenced by $binding has the corresponding value.
+
+               *  A column/value pair in $binding with a column reference of "#code" matches as specified for the appropriate class of [code list document] for that [column name].
+
+               *  A column/value pair in $binding with a column reference of "#range" matches:
+
+                     *  If $resource does not contain a column corresponding to the well-known columns "minimum-inclusive", "minimum-exclusive", "maximum-inclusive", or "maximum-exclusive", then the binding has no matches.
+
+                     *  Otherwise, yield all distinct entries for which all of the following are true, given that the value of the column/value pair is $value:
+
+                           *  Either there is no [code value] for column "minimum-inclusive", or the [code value] of that column is less than or equal to $value.
+
+                           *  Either there is no [code value] for column "minimum-exclusive", or the [code value] of that column is less than $value.
+
+                           *  Either there is no [code value] for column "maximum-inclusive", or the [code value] of that column is greater than or equal to $value.
+
+                           *  Either there is no [code value] for column "maximum-exclusive", or the [code value] of that column is greater than $value.
+
+         *  If the binding has no matches, then:
+
+               *  If the binding is constraining, then it is invalid.
+
+               *  If the binding is not constraining, then it is valid.
+
+         *  If the binding has one or more matches, then it is valid.
+
+   The above rule specifies that code list identifiers are to be resolved to [locally-resolved resources], which are in the [local context] of the entity catalog. This specification does not specify that code list identifiers should be resolved by network fetches of code list resources. Code list identifiers are meant to be treated as identifiers, as names, and not as network locations of resources.
+
+   A code list binding that is used to connect a value to a service or other code list methodology that does not use [code list documents] will result in invalid matches. This is as designed; matches for services or other methodologies should be determined by a method other than this rule.
+
+Rule 4-17. Value comparisons based on types
+
+   Rule 4-16, Matches and validity for a code list binding, above, requires values from an XML document to be compared to values from code lists. Whether values match, and how they compare, is dependent on what kind of data those values are. For example, text values and string values are compared using different methods. This rule establishes that typing of comparisons is based on the types of the values.
+
+   [XPathFunctions] Section 17, Casting provides a set of rules for type casting among XML Schema primitive types.
+
+   [Rule 4-17] (VSET)
+
+      Comparisons between a value $instance-value of a column/value pair and a code value $code-value MUST be conducted as follows:
+
+         1. $instance-value has a data type, $instance-data-type, provided by its XML Schema definition.
+
+         2. $code-value has a data type, $code-data-type, as provided by its code list document as specified for its class of code list document. That data type is either a data type defined by the XML Schema definition language, or is empty.
+
+         3. A data type, $comparison-data-type, is calculated as:
+
+               *  If $code-data-type is empty, then $instance-date-type.
+
+               *  If it exists, the lowest common ancestor of the two data types.
+
+               *  Otherwise, xs:string.
+
+         4. $instance-value and $code-value are cast to $comparison-data-type, in accordance with [XPathFunctions] Section 17, Casting.
+
+         5. Equality comparisons are conducted as appropriate for $comparison-data-type.
+
+         6. Inequality comparisons (e.g., less than, greater than) for ranges are conducted as appropriate for lowest atomic base type of $comparison-data-type.
+
+Rule 4-18. Code list identified by candidate code list identifiers
+
+   Each class of code list document specifies how its instances define code list identifiers that may refer to a code list. This rule ensures that code lists are referred to via the correct code list identifier, when it is defined.
+
+   [Rule 4-18] (VSET)
+
+      When a [code list document] defines candidate [code list identifiers], a [code list identifier] against which a [code list document] [resource] is [resolved] MUST be a candidate code list identifier for that code list document.
+
+5. Comma-separated values (CSV) code lists
+
+   This document provides for the use of a [CSV file] as an implementation of a [code list document]. This section lays out the rules for using CSV files as code list documents. The definitions of CSV structural terms are provided by [RFC4180], as noted in Section 2.10, RFC 4180: Comma-separated values (CSV) files, above.
+
+Rule 5-1. CSV code list document is a CSV file
+
+   [Rule 5-1] (CSV-CLD)
+
+      A [CSV code list document] MUST be a [CSV file].
+
+Rule 5-2. CSV code list document has header
+
+   [Rule 5-2] (CSV-CLD)
+
+      A [CSV code list document] MUST have a [CSV header].
+
+Rule 5-3. CSV column name is not empty
+
+   [Rule 5-3] (CSV-CLD)
+
+      A [CSV column name] of a [CSV code list document] MUST not be empty.
+
+Rule 5-4. CSV file as a code list document
+
+   [Rule 5-4] (CSV-CLD)
+
+      A [CSV file] may act as a [CSV code list document] in the following manner:
+
+         1. [Code list identifiers]: The CSV file does not specify its code list identifiers. Each CSV file contains a single [code list]. The CSV file MAY be resolved to any [code list identifier].
+
+         2. [Distinct entries]: Each [CSV record] of the [CSV file] constitutes a distinct entry.
+
+         3. [Code values]: Each [CSV field] corresponds to a code value.
+
+         4. [Column names]: The column name of a [code value] is the [CSV column name] corresponding by position within the [CSV header] to the position of the [CSV field] within its [CSV record]
+
+         5. A [column] in a [CSV file] is a well-known column when its [CSV column name] is the same as the [column name] of a well-known column.
+
+         6. A reference to [column] "#code" is matched, in order, to:
+
+               *  a column with [CSV column name] of "code", or
+
+               *  the first [column] of the [CSV file].
+
+         7. A [code value] in a [CSV file] has no type; its data type is empty.
+
+6. Genericode code lists
+
+   This document incorporates a Genericode document as an implementation of a [code list document]. This section lays out rules for Genericode documents and their use as code list documents.
+
+Rule 6-1. Genericode code list document defined by Genericode
+
+   [Rule 6-1] (GC-CLD)
+
+      A [Genericode code list document] MUST be a Genericode code list document as defined by [Genericode] Section 3.2, Genericode Document Types, which states:
+
+         A Genericode code list document has the root element <gc:CodeList>. It contains metadata describing the code list as a whole, as well as explicit code list data -- codes and associated values.
+
+Rule 6-2. Document with conformance target is Genericode code list document
+
+   [Rule 6-2] (VSET)
+
+      A [resource] with an [effective conformance target identifier] of http://reference.niem.gov/niem/specification/code-lists/4.0/#GenericodeCodeListDocument MUST be a [Genericode code list document].
+
+Rule 6-3. Genericode code list document is schema-valid
+
+   [Rule 6-3] (GC-CLD)
+
+      A [Genericode code list document] MUST be [schema-valid] against the schema document for the Genericode namespace as provided at http://docs.oasis-open.org/codelist/ns/genericode/1.0/.
+
+Rule 6-4. XML Schema alternate datatypes are treated the same as built in datatypes
+
+   [XMLSchema2] defines an alternate namespace name as an alias that may be used to refer to simple datatypes it defines. [XMLSchema2] Section 3.1, Namespace considerations states:
+
+      To facilitate usage in specifications other than the XML Schema definition language, such as those that do not want to know anything about aspects of the XML Schema definition language other than the datatypes, each built-in datatype is also defined in the namespace whose URI is:
+
+         *  http://www.w3.org/2001/XMLSchema-datatypes
+
+      This applies to both built-in primitive and built-in derived datatypes.
+
+   [Genericode] uses this alternate namespace name as a default for the datatype library in Genericode documents, referring to it as "the URI for W3C XML Schema datatypes". As this separate namespace is not expressing a semantic distinction, and in order to keep Genericode documents simple, this document specifies that the alternate namespace name is to be treated as if it was the namespace name for the XML Schema definition language.
+
+   [Rule 6-4] (GC-CLD)
+
+      A datatype with a namespace name of http://www.w3.org/2001/XMLSchema-datatypes MUST be evaluated as if it had a namespace name of http://www.w3.org/2001/XMLSchema.
+
+Rule 6-5. Genericode file as a code list document
+
+   [Rule 6-5] (GC-CLD)
+
+      A [Genericode code list document] may act as a [code list document] in the following manner:
+
+         1. [Code list identifier]: Candidate code list identifiers for the document are the values for CanonicalUri, CanonicalVersionUri, and LocationUri defined by the Genericode document for the code list.
+
+         2. [Distinct entries]: Each row of the Genericode code list document constitutes a distinct entry.
+
+         3. [Code values]: Each Value element of the Genericode code list document corresponds to a code value.
+
+         4. [Column names]: The columns are as defined by Genericode; the [column name] of a column is the value of attribute Id of that column.
+
+         5. A column in a [Genericode code list document] is a well-known column when its value for CanonicalUri or CanonicalVersionUri corresponds to the [code list identifier] specified for that well-known column.
+
+         6. A reference to [column] "#code" is matched, in order, to:
+
+               *  a column corresponding to well-known column "code",
+
+               *  a column with [column name] "code",
+
+               *  the column in the first single-column key for the code list, or
+
+               *  the first column in the code list.
+
+         7. A [code value] in a Genericode file has a type as specified by the data definition of its column. If the Type attribute references an element declaration, then the type is the type of that element. If a Parameter, which introduces gc:DatatypeFacet, is used, then the type is treated as an anonymous type derived from the type of the column. A value for which no data type is specified has an empty data type.
+
+7. Well-known columns and references
+
+   This specification defines [column identifiers] and [column names] for several columns that have well-understood semantics. These identifiers and names may be used to define columns in [code list documents] that implement these semantics. These values may be used different ways in different contexts:
+
+      *  The column identifier is an [absolute URI] that a column in a code list document may use to identify a column as being a well-known column. A [Genericode code list document] will use this URI as a CanonicalUri value to indicate that a column is a well-known column.
+
+      *  The column name is a string that may be used by a column in a code list document to identify the column as a well-known column. A [CSV code list document] will use this name as a [column name] to indicate that a column is a well-known column.
+
+   In addition to well-known columns, this specification defines well-known column references. A well-known column reference is used in [code list bindings]. The well-known column references defined by this specification are:
+
+      *  "#code": A binding will use the column name "#code" to refer to a default code value in a code list. Each class of [code list document] defines how a reference to "#code" is resolved (q.v. Rule 5-4, CSV file as a code list document, above, and Rule 6-5, Genericode file as a code list document, above). A binding that doesn't specify a column name will default to column name "#code".
+
+      *  "#range": A binding will use the column name "#range" to match into a range of values, as described by Section 7.5, Columns supporting ranges of values, below. 
+
+7.1. Column: "code"
+
+   [Column name]: code
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/code
+
+   Description: A "code" column carries a value that stands for some other value or meaning, or acts as an enumeration. A code value may be a single-column key within its code list, to uniquely identify some distinct entry.
+
+7.2. Column: "definition"
+
+   [Column name]: definition
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/definition
+
+   Description: A "definition" column carries a human-readable meaning of a [distinct entry]. This is analogous to the data definition of an enumerated code in a simple type in a NIEM schema.
+
+7.3. Column: "subclass-of"
+
+   [Column name]: subclass-of
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/subclass-of
+
+   Description: A "subclass-of" column indicates that a given distinct entry is a subclass of some other distinct entry. It is a key reference within its code list, referring to a distinct entry having the indicated value for its default code column.
+
+7.4. Column: "uri"
+
+   [Column name]: uri
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/uri
+
+   Description: A "uri" column provides a uniform resource identifier for a distinct entry.
+
+7.5. Columns supporting ranges of values
+
+   This specification establishes a set of columns that support code tables that describe ranges of values. This enables code lists to be used that map between sets of values. One use for this is to enable translation between continuous numeric values and discrete enumerated values. Another use is to support fixed-point integer values used to represent more meaningful numeric values. For example, fixed-length bit field values can be mapped to elevation in meters.
+
+   In Table Table 7-1, Example code list: directions, below, a direction value in degrees is mapped to enumerated values for the cardinal and ordinal directions. This code list establishes the ranges using the columns "minimum-inclusive" and "maximum-exclusive". Each distinct entry contains a "direction" column, identifying to what direction the range is mapped. A [Genericode code list document] expressing this code list would define columns with CanonicalUri matching the [column identifiers] for "minimum-inclusive" and "maximum-exclusive". A [CSV code list document] would define columns named "minimum-inclusive" and "maximum-exclusive".
+
+   Table 7-1: Example code list: directions
+
+      minimum-inclusive|maximum-exclusive|direction
+
+      0|22.5|north
+
+      22.5|67.5|northeast
+
+      67.5|112.5|east
+
+      112.5|157.5|southeast
+
+      157.5|202.5|south
+
+      202.5|247.5|southwest
+
+      247.5|292.5|west
+
+      292.5|337.5|northwest
+
+      337.5|360|north
+
+   A code list binding that refers to range columns uses the [column name] "#range". For example, Figure 7-1, Instance referencing range columns, below, uses a run-time binding. It identifies the code list with attribute cli:codeListURI. It refers to range columns with attribute cli:codeListColumnName set to "#range".
+
+   Figure 7-1: Instance referencing range columns
+
+      <m:Position
+         xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+         xmlns:ext="http://example.org/code-lists/example/directions/extension"
+         xmlns:m="http://release.niem.gov/niem/domains/maritime/4.0/"
+         xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/">
+        <m:PositionHeadingMeasure>
+          <ext:DegreeAngleValue
+             cli:codeListURI="http://example.org/code-lists/example/directions/code-list/1"
+             cli:codeListColumnName="#range">122.31</ext:DegreeAngleValue>
+          <ext:AngleUnitText>deg</ext:AngleUnitText>
+        </m:PositionHeadingMeasure>
+      </m:Position>
+      
+
+   Matching into Table Table 7-1, Example code list: directions, above, would yield the [distinct entry] for "southeast", since it is the sole entry with a minimum-inclusive value (112.5) that is less than or equal to 122.31, and a maximum-exclusive value (157.5) that is greater than 122.31.
+
+7.5.1. Column: "minimum-inclusive"
+
+   [Column name]: minimum-inclusive
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/minimum-inclusive
+
+   Description: A value that is an [inclusive lower bound] of a range.
+
+7.5.2. Column: "minimum-exclusive"
+
+   [Column name]: minimum-exclusive
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/minimum-exclusive
+
+   Description: A value that is an [exclusive lower bound] of a range.
+
+7.5.3. Column: "maximum-inclusive"
+
+   [Column name]: maximum-inclusive
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/maximum-inclusive
+
+   Description: A value that is an [inclusive upper bound] of a range.
+
+7.5.4. Column: "maximum-exclusive"
+
+   [Column name]: maximum-exclusive
+
+   [Column identifier]: http://reference.niem.gov/niem/specification/code-lists/4.0/column/maximum-exclusive
+
+   Description: A value that is an [exclusive upper bound] of a range.
+
+7.6. Code list example using well-known columns
+
+   The following examples show well-known columns being reused in a code list. A single code list is presented as an abstract table, corresponding CSV, and portions of corresponding Genericode. First, Table Table 7-2, Use of columns in a code list, below, is a tabular representation.
+
+   Table 7-2: Use of columns in a code list
+
+      code|definition|uri
+
+      application/json|json|https://www.iana.org/assignments/media-types/application/json
+
+      application/msword|doc|https://www.iana.org/assignments/media-types/application/msword
+
+      application/pdf|pdf|https://www.iana.org/assignments/media-types/application/pdf
+
+   In this table, we see the well-known columns "code", "definition", and "uri" being used. The next three rows represent the [distinct entries] of the code list, with a [code value] for each [column].
+
+   Figure 7-2, Definition of columns in Genericode, below, shows a CSV file corresponding to the abstract table. In this version, the columns are identifiable as well-known columns because each [CSV column name] is a [column name] of a well-known column defined above.
+
+   Figure 7-2: Definition of columns in Genericode
+
+      code,definition,uri
+      application/json,json,https://www.iana.org/assignments/media-types/application/json
+      application/msword,doc,https://www.iana.org/assignments/media-types/application/msword
+      application/pdf,pdf,https://www.iana.org/assignments/media-types/application/pdf
+
+   For the above code list, Genericode in Figure 7-3, Definition of columns in Genericode, below, defines columns that reuse the well-known columns. Each column is identifiable as a well-known column because its CanonicalUri value is a [column identifier] of a well-known column.
+
+   Figure 7-3: Definition of columns in Genericode
+
+      <Column Id="code" Use="required">
+        <ShortName>code</ShortName>
+        <CanonicalUri>http://reference.niem.gov/niem/specification/code-lists/4.0/column/code</CanonicalUri>
+        <Data Type="normalizedString" Lang="en"/>
+      </Column>
+      <Column Id="definition" Use="optional">
+        <ShortName>definition</ShortName>
+        <CanonicalUri>http://reference.niem.gov/niem/specification/code-lists/4.0/column/definition</CanonicalUri>
+        <Data Type="normalizedString" Lang="en"/>
+      </Column>
+      <Column Id="uri" Use="optional">
+        <ShortName>uri</ShortName>
+        <CanonicalUri>http://reference.niem.gov/niem/specification/code-lists/4.0/column/uri</CanonicalUri>
+        <Data Type="anyURI" Lang="en"/>
+      </Column>
+
+   Figure 7-4, Distinct entries in Genericode, below, contains distinct entries for the code lists, in the form of Genericode rows. These rows contain the same data as the other code list representations above.
+
+   Figure 7-4: Distinct entries in Genericode
+
+      <Row>
+        <Value ColumnRef="code">
+          <SimpleValue>application/json</SimpleValue>
+        </Value>
+        <Value ColumnRef="definition">
+          <SimpleValue>json</SimpleValue>
+        </Value>
+        <Value ColumnRef="uri">
+          <SimpleValue>https://www.iana.org/assignments/media-types/application/json</SimpleValue>
+        </Value>
+      </Row>
+      <Row>
+        <Value ColumnRef="code">
+          <SimpleValue>application/msword</SimpleValue>
+        </Value>
+        <Value ColumnRef="definition">
+          <SimpleValue>doc</SimpleValue>
+        </Value>
+        <Value ColumnRef="uri">
+          <SimpleValue>https://www.iana.org/assignments/media-types/application/msword</SimpleValue>
+        </Value>
+      </Row>
+      <Row>
+        <Value ColumnRef="code">
+          <SimpleValue>application/pdf</SimpleValue>
+        </Value>
+        <Value ColumnRef="definition">
+          <SimpleValue>pdf</SimpleValue>
+        </Value>
+        <Value ColumnRef="uri">
+          <SimpleValue>https://www.iana.org/assignments/media-types/application/pdf</SimpleValue>
+        </Value>
+      </Row>
+
+Appendix A. References
+
+   [CTAS]: Roberts, Webb. "NIEM Conformance Targets Attribute Specification, Version 3.0." NIEM Technical Architecture Committee, July 31, 2014. http://reference.niem.gov/niem/specification/conformance-targets-attribute/3.0/NIEM-CTAS-3.0-2014-07-31.html.
+
+   [Genericode]: Anthony B. Coates, ed. "Code List Representation (Genericode) Version 1.0, Committee Specification." OASIS, December 28, 2007. http://docs.oasis-open.org/codelist/cs-genericode-1.0/doc/oasis-code-list-representation-genericode.html.
+
+   [NIEM NDR]: Roberts, Webb. "National Information Exchange Model Naming and Design Rules, Version 4.0." NIEM Technical Architecture Committee, November 7, 2017. http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html.
+
+   [RFC2119]: Bradner, S. (1997, March). Key words for use in RFCs to Indicate Requirement Levels. Internet Engineering Task Force. Retrieved from http://www.ietf.org/rfc/rfc2119.txt
+
+   [RFC3986]: Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform Resource Identifier (URI): Generic Syntax", STD 66, RFC 3986, DOI 10.17487/RFC3986, January 2005, http://www.rfc-editor.org/info/rfc3986.
+
+   [RFC4180]: Shafranovich, Y. "Common Format and MIME Type for Comma-Separated Values (CSV) Files, RFC 4180." IETF Network Working Group, October 2005. http://www.ietf.org/rfc/rfc4180.txt. 
+
+   [XPathFunctions]: Malhotra, Ashok, Jim Melton, Norman Walsh, and Michael Kay. "XQuery 1.0 and XPath 2.0 Functions and Operators (Second Edition)." W3C, December 14, 2010. https://www.w3.org/TR/xpath-functions/.
+
+   [XML]: Bray, T., Paoli, J., Sperberg-McQueen, C. M., Maler, E., & Yergeau, F. (2008, November 26). Extensible Markup Language (XML) 1.0 (Fifth Edition). The World Wide Web Consortium (W3C). Retrieved from http://www.w3.org/TR/2008/REC-xml-20081126/
+
+   [XML Catalogs]: Walsh, Norman. "XML Catalogs--OASIS Standard V1.1, 7 October 2005." OASIS Open, Inc., October 7, 2005. https://www.oasis-open.org/committees/download.php/14809/std-entity-xml-catalogs-1.1.html.
+
+   [XML Infoset]: Cowan, John, and Richard Tobin. "XML Information Set (Second Edition)", 4 February 2004. http://www.w3.org/TR/2004/REC-xml-infoset-20040204/.
+
+   [XMLNamespaces]: Bray, T., Hollander, D., Layman, A., Tobin, R., & Thompson, H. S. (2009, December 8). Namespaces in XML 1.0 (Third Edition). W3C. Retrieved from http://www.w3.org/TR/2009/REC-xml-names-20091208/
+
+   [XMLSchema1]: Thompson, H. S., Beech, D., Maloney, M., & Mendelsohn, N. (2004, October 28). XML Schema Part 1: Structures Second Edition. Retrieved from http://www.w3.org/TR/2004/REC-xmlschema-1-20041028/.
+
+   [XMLSchema2]: Biron, Paul V., and Ashok Malhotra. "XML Schema Part 2: Datatypes Second Edition," October 28, 2004. http://www.w3.org/TR/2004/REC-xmlschema-2-20041028/.
+
+Appendix B. XML Schema document for the code lists instance namespace
+
+   The following XML Schema document defines the [code lists instance namespace], a namespace for binding the content of XML documents to code lists at run time. This vocabulary may be incorporated into exchange specifications, and is used in exchanged XML documents to express code list bindings at run time. This schema document conforms to NIEM 3 and NIEM 4, and may be integrated into either NIEM 3 or NIEM 4-conformant schema sets.
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <xs:schema
+       ct:conformanceTargets="http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/#ReferenceSchemaDocument http://reference.niem.gov/niem/specification/naming-and-design-rules/3.0/#ReferenceSchemaDocument"
+       targetNamespace="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+       version="4.0"
+       xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   
+     <xs:annotation>
+       <xs:documentation>Definitions for the use of the NIEM Code Lists Specification, version 4.0, in XML message instances.</xs:documentation>
+     </xs:annotation>
+   
+     <xs:attribute name="codeListURI" type="xs:anyURI">
+       <xs:annotation>
+         <xs:documentation>A universal identifier for a code list.</xs:documentation>
+       </xs:annotation>
+     </xs:attribute>
+   
+     <xs:attribute name="codeListColumnName" type="xs:string">
+       <xs:annotation>
+         <xs:documentation>A local name for a code list column within a code list.</xs:documentation>
+       </xs:annotation>
+     </xs:attribute>
+   
+     <xs:attribute name="codeListConstrainingIndicator" type="xs:boolean">
+       <xs:annotation>
+         <xs:documentation>True when a code list binding constrains the validity of a code list value, false otherwise.</xs:documentation>
+       </xs:annotation>
+     </xs:attribute>
+   
+   </xs:schema>
+   
+
+Appendix C. XML Schema document for the code list schema appinfo namespace
+
+   The following XML Schema document defines the [code lists schema appinfo namespace], a namespace for annotating XML Schema component definitions. These annotations connect XML components to code lists at schema development time.
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <xs:schema 
+      targetNamespace="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-schema-appinfo/"
+      version="4.0"
+      xmlns:clsa="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-schema-appinfo/"
+      xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   
+     <xs:annotation>
+       <xs:documentation>This schema provides annotations for connecting content defined within an XML Schema document to the content of code lists.</xs:documentation>
+     </xs:annotation>
+   
+     <xs:element name="SimpleCodeListBinding">
+       <xs:annotation>
+         <xs:documentation>An element for connecting simple content defined by an XML Schema component to a a column of a code list.</xs:documentation>
+       </xs:annotation>
+       <xs:complexType>
+         <xs:attribute name="codeListURI" type="xs:anyURI" use="required">
+           <xs:annotation>
+             <xs:documentation>A universal identifier for a code list.</xs:documentation>
+           </xs:annotation>
+         </xs:attribute>
+         <xs:attribute name="columnName" type="xs:string" use="optional">
+           <xs:annotation>
+             <xs:documentation>A local name for a code list column within a code list.</xs:documentation>
+           </xs:annotation>
+         </xs:attribute>
+         <xs:attribute name="constrainingIndicator" type="xs:boolean" use="optional">
+           <xs:annotation>
+             <xs:documentation>True when a code list binding constrains the validity of a code list value, false otherwise.</xs:documentation>
+           </xs:annotation>
+         </xs:attribute>
+       </xs:complexType>
+     </xs:element>
+   
+     <xs:element name="ComplexCodeListBinding">
+       <xs:annotation>
+         <xs:documentation>An element for connecting complex content defined by an XML Schema component to a set of columns of a code list.</xs:documentation>
+       </xs:annotation>
+       <xs:complexType>
+         <xs:sequence>
+           <xs:element name="ElementCodeListBinding" form="qualified" maxOccurs="unbounded">
+             <xs:complexType>
+               <xs:attribute name="elementName" type="xs:QName" use="required">
+                 <xs:annotation>
+                   <xs:documentation>A qualified name of an XML element.</xs:documentation>
+                 </xs:annotation>
+               </xs:attribute>
+               <xs:attribute name="columnName" type="xs:string" use="optional">
+                 <xs:annotation>
+                   <xs:documentation>A local name for a code list column within a code list.</xs:documentation>
+                 </xs:annotation>
+               </xs:attribute>
+             </xs:complexType>
+           </xs:element>
+         </xs:sequence>
+         <xs:attribute name="codeListURI" type="xs:anyURI" use="required">
+           <xs:annotation>
+             <xs:documentation>A universal identifier for a code list.</xs:documentation>
+           </xs:annotation>
+         </xs:attribute>
+         <xs:attribute name="constrainingIndicator" type="xs:boolean" use="optional">
+           <xs:annotation>
+             <xs:documentation>True when a code list binding constrains the validity of a code list value, false otherwise.</xs:documentation>
+           </xs:annotation>
+         </xs:attribute>
+       </xs:complexType>
+     </xs:element>
+   
+   </xs:schema>
+   
+
+Appendix D. Example documents: Make-Model example
+
+   This section contains a single code list, with instances and supporting schemas for both run-time binding and schema-time binding:
+
+   A code list provides makes and models of vehicles.
+
+      *  Appendix D.1, Vehicle make and model code list, below, shows the code list as a table.
+
+      *  Appendix D.2, Make-Model code list CSV file, below, shows the code list as comma-separated values (CSV).
+
+      *  Appendix D.3, Make-Model code list Genericode file, below, shows the code list rendered into Genericode.
+
+   The code list is used in XML exchanges. There are two methods provided by this specification for binding XML document content (messages) to code lists: schema-time binding through XML Schema appinfo annotations, and run-time binding through the cli:codeListURI attribute. The first example shows the code list bound to the message at schema time:
+
+      *  Appendix D.4, XML instance with schema-time code list binding, below, shows the XML instance that relies on schema-time binding.
+
+      *  Appendix D.5, Extension schema with schema-time code list binding, below, shows an extension schema that defines new components, and which binds the XML message to the code list via schema annotations.
+
+      *  Appendix D.6, XML catalog for schema-time code list binding, below, shows an XML catalog that directs assembly of the XML Schema, and which resolves the [code list identifier] to the Genericode file for the code list.
+
+   The second example shows the code list bound to the XML data through run-time binding, using the cli:codeListURI attribute.
+
+      *  Appendix D.7, XML instance with run-time code list binding, below, shows the XML instance with run-time binding.
+
+      *  Appendix D.8, Extension schema with run-time code list binding, below, shows an extension schema that defines new components that provide for run-time reference to the code list.
+
+      *  Appendix D.9, XML catalog for run-time code list binding, below, shows an XML catalog that directs assembly of the XML Schema and resolves the location of the Genericode file for the code list.
+
+Appendix D.1. Vehicle make and model code list
+
+   Table D-1: Vehicle make and model code list
+
+      Make code|Make description|Model code|Model description|Class
+
+      FORD|Ford|FUS|Fusion|Auto
+
+      HOND|Honda|CIV|Civic|Auto
+
+      HOND|Honda|CRV|CRV|SUV
+
+      DODG|Dodge|R15|Ram 1500|Pickup
+
+      NISS|Nissan|ALT|Altima|Auto
+
+      FORD|Ford|F15|F-150|Pickup
+
+      TOYT|Toyota|COA|Corolla|Auto
+
+      FORD|Ford|500|Five Hundred|Auto
+
+      HOND|Honda|ACC|Accord|Auto
+
+      TOYT|Toyota|CAM|Camry|Auto
+
+      CHEV|Chevrolet|SLV|Silverado|Pickup
+
+      MERZ|Mercedes-Benz|500|500 Series|Auto
+
+Appendix D.2. Make-Model code list CSV file
+
+   Make code,Make description,Model code,Model description,Class
+   FORD,Ford,FUS,Fusion,Auto
+   HOND,Honda,CIV,Civic,Auto
+   HOND,Honda,CRV,CRV,SUV
+   DODG,Dodge,R15,Ram 1500,Pickup
+   NISS,Nissan,ALT,Altima,Auto
+   FORD,Ford,F15,F-150,Pickup
+   TOYT,Toyota,COA,Corolla,Auto
+   FORD,Ford,500,Five Hundred,Auto
+   HOND,Honda,ACC,Accord,Auto
+   TOYT,Toyota,CAM,Camry,Auto
+   CHEV,Chevrolet,SLV,Silverado,Pickup
+   MERZ,Mercedes-Benz,500,500 Series,Auto
+
+Appendix D.3. Make-Model code list Genericode file
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <gc:CodeList xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+                xmlns:gc="http://docs.oasis-open.org/codelist/ns/genericode/1.0/"
+                xmlns:gca="http://example.org/namespace/genericode-appinfo">
+      <Annotation>
+         <AppInfo>
+            <gca:ConformanceTargets ct:conformanceTargets="http://reference.niem.gov/niem/specification/code-lists/4.0/#GenericodeCodeListDocument"/>
+         </AppInfo>
+     </Annotation>
+      <Identification>
+         <ShortName>VMA</ShortName>
+         <Version>1</Version>
+         <CanonicalUri>http://example.org/code-list/vehicle-make-model</CanonicalUri>
+         <CanonicalVersionUri>http://example.org/code-list/vehicle-make-model/2013-03-05</CanonicalVersionUri>
+      </Identification>
+      <ColumnSet>
+         <Column Id="make" Use="required">
+            <ShortName>Make-code</ShortName>
+            <Data Type="token"/>
+         </Column>
+         <Column Id="make-descr" Use="required">
+            <ShortName>Make-description</ShortName>
+            <Data Type="string"/>
+         </Column>
+         <Column Id="model" Use="required">
+            <ShortName>Model-code</ShortName>
+            <Data Type="token"/>
+         </Column>
+         <Column Id="model-descr" Use="required">
+            <ShortName>Model-description</ShortName>
+            <Data Type="string"/>
+         </Column>
+         <Column Id="class" Use="required">
+            <ShortName>Class</ShortName>
+            <Data Type="token"/>
+         </Column>
+         <Key Id="key-make-model">
+            <ShortName>Key</ShortName>
+            <ColumnRef Ref="make"/>
+            <ColumnRef Ref="model"/>
+         </Key>
+      </ColumnSet>
+      <SimpleCodeList>
+         <Row>
+            <Value>
+               <SimpleValue>FORD</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Ford</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>FUS</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Fusion</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>HOND</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Honda</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>CIV</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Civic</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>HOND</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Honda</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>CRV</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>CRV</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>SUV</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>DODG</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Dodge</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>R15</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Ram 1500</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Pickup</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>NISS</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Nissan</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>ALT</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Altima</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>FORD</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Ford</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>F15</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>F-150</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Pickup</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>TOYT</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Toyota</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>COA</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Corolla</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>FORD</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Ford</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>500</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Five Hundred</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>HOND</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Honda</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>ACC</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Accord</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>TOYT</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Toyota</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>CAM</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Camry</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>CHEV</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Chevrolet</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>SLV</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Silverado</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Pickup</SimpleValue>
+            </Value>
+         </Row>
+         <Row>
+            <Value>
+               <SimpleValue>MERZ</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Mercedes-Benz</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>500</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>500 Series</SimpleValue>
+            </Value>
+            <Value>
+               <SimpleValue>Auto</SimpleValue>
+            </Value>
+         </Row>
+      </SimpleCodeList>
+   </gc:CodeList>
+   
+
+Appendix D.4. XML instance with schema-time code list binding
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <ext:Vehicle xmlns:ext="http://example.org/namespace/extension-schema-time">
+     <ext:VehicleMakeCode>DODG</ext:VehicleMakeCode>
+     <ext:VehicleModelCode>R15</ext:VehicleModelCode>
+   </ext:Vehicle>
+   
+
+Appendix D.5. Extension schema with schema-time code list binding
+
+   <?xml version="1.0" encoding="us-ascii"?>
+   <xs:schema
+      ct:conformanceTargets="
+        http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/#ReferenceSchemaDocument
+        http://reference.niem.gov/niem/specification/code-lists/4.0/#SchemaDocument"
+      targetNamespace="http://example.org/namespace/extension-schema-time"
+      version="1"
+      xmlns:clsa="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-schema-appinfo/"
+      xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+      xmlns:ext="http://example.org/namespace/extension-schema-time"
+      xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/"
+      xmlns:niem-xs="http://release.niem.gov/niem/proxy/xsd/4.0/"
+      xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   
+     <xs:annotation>
+       <xs:documentation>An extension schema for vehicle make and model values, showing schema-time binding of XML content to a code list.</xs:documentation>
+     </xs:annotation>
+   
+     <xs:import namespace="http://release.niem.gov/niem/niem-core/4.0/"/>
+     <xs:import namespace="http://release.niem.gov/niem/proxy/xsd/4.0/"/>
+   
+     <xs:element name="Vehicle" type="nc:VehicleType"
+                 substitutionGroup="nc:Vehicle">
+       <xs:annotation>
+         <xs:appinfo>
+           <clsa:ComplexCodeListBinding
+               codeListURI="http://example.org/code-list/vehicle-make-model">
+             <clsa:ElementCodeListBinding elementName="ext:VehicleMakeCode"
+                                          columnName="make"/>
+             <clsa:ElementCodeListBinding elementName="ext:VehicleModelCode"
+                                          columnName="model"/>
+           </clsa:ComplexCodeListBinding>
+         </xs:appinfo>
+       </xs:annotation>
+     </xs:element>
+   
+     <xs:element name="VehicleMakeCode" type="niem-xs:token"
+                 substitutionGroup="nc:VehicleMakeAbstract">
+       <xs:annotation>
+         <xs:documentation>A code for a manufacturer of a vehicle.</xs:documentation>
+         <xs:appinfo>
+           <clsa:SimpleCodeListBinding
+               codeListURI="http://example.org/code-list/vehicle-make-model"
+               columnName="make"/>
+         </xs:appinfo>
+       </xs:annotation>
+     </xs:element>
+   
+     <xs:element name="VehicleModelCode" type="niem-xs:token"
+                 substitutionGroup="nc:VehicleModelAbstract">
+       <xs:annotation>
+         <xs:documentation>A code for a model of a vehicle.</xs:documentation>
+         <xs:appinfo>
+           <clsa:SimpleCodeListBinding
+               codeListURI="http://example.org/code-list/vehicle-make-model"
+               columnName="model"/>
+         </xs:appinfo>
+       </xs:annotation>
+     </xs:element>
+   
+   </xs:schema>
+   
+
+Appendix D.6. XML catalog for schema-time code list binding
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+   <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+     <uri name="http://example.org/namespace/extension-schema-time"
+          uri="extension.xsd"/>
+     <uri name="http://example.org/code-list/vehicle-make-model"
+          uri="../make-model.gc"/>
+     <nextCatalog catalog="../../niem/xml-catalog.xml"/>
+   </catalog>
+   
+
+Appendix D.7. XML instance with run-time code list binding
+
+   <?xml version="1.0" encoding="US-ASCII" standalone="yes"?>
+   <nc:Vehicle
+       xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+       xmlns:ext="http://example.org/namespace/extension-run-time"
+       xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/">
+     <ext:VehicleMakeCode
+         cli:codeListURI="http://example.org/code-list/vehicle-make-model"
+         cli:codeListColumnName="make"
+       >DODG</ext:VehicleMakeCode>
+     <ext:VehicleModelCode
+         cli:codeListURI="http://example.org/code-list/vehicle-make-model"
+         cli:codeListColumnName="model"
+       >R15</ext:VehicleModelCode>
+   </nc:Vehicle>
+   
+
+Appendix D.8. Extension schema with run-time code list binding
+
+   <?xml version="1.0" encoding="us-ascii"?>
+   <xs:schema
+      ct:conformanceTargets="http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/#ExtensionSchemaDocument"
+      targetNamespace="http://example.org/namespace/extension-run-time"
+      version="1"
+      xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+      xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+      xmlns:ext="http://example.org/namespace/extension-run-time"
+      xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/"
+      xmlns:structures="http://release.niem.gov/niem/structures/4.0/"
+      xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   
+     <xs:annotation>
+       <xs:documentation>An extension schema for vehicle make and model values, providing for run-time binding of XML content to a code list.</xs:documentation>
+     </xs:annotation>
+   
+     <xs:import namespace="http://release.niem.gov/niem/niem-core/4.0/"/>
+     <xs:import namespace="http://release.niem.gov/niem/structures/4.0/"/>
+     <xs:import namespace="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"/>
+   
+     <xs:complexType name="CodeType">
+       <xs:annotation>
+         <xs:documentation>A data type for a code with codes sourced from an external code list.</xs:documentation>
+       </xs:annotation>
+       <xs:simpleContent>
+         <xs:extension base="xs:token">
+           <xs:attributeGroup ref="structures:SimpleObjectAttributeGroup"/>
+           <xs:attribute ref="cli:codeListColumnName" use="optional"/>
+           <xs:attribute ref="cli:codeListConstrainingIndicator" use="optional"/>
+           <xs:attribute ref="cli:codeListURI" use="required"/>
+         </xs:extension>
+       </xs:simpleContent>
+     </xs:complexType>
+   
+     <xs:element name="VehicleMakeCode" type="nc:CodeType"
+                 substitutionGroup="nc:VehicleMakeAbstract">
+       <xs:annotation>
+         <xs:documentation>A code for a manufacturer of a vehicle.</xs:documentation>
+       </xs:annotation>
+     </xs:element>
+   
+     <xs:element name="VehicleModelCode" type="nc:CodeType"
+                 substitutionGroup="nc:VehicleModelAbstract">
+       <xs:annotation>
+         <xs:documentation>A code for a model of a vehicle.</xs:documentation>
+       </xs:annotation>
+     </xs:element>
+   
+   </xs:schema>
+   
+
+Appendix D.9. XML catalog for run-time code list binding
+
+   <?xml version="1.0" encoding="US-ASCII"?>
+   <!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+   <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+     <uri name="http://example.org/namespace/extension-run-time"
+          uri="extension.xsd"/>
+     <uri name="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+          uri="../../../code-lists-instance.xsd"/>
+     <uri name="http://example.org/code-list/vehicle-make-model"
+          uri="../make-model.gc"/>
+     <nextCatalog catalog="../../niem/xml-catalog.xml"/>
+   </catalog>
+   
+
+Appendix E. Index
+
+   The index is omitted from this edition.
+
+Appendix F. Index of definitions
+
+   The index of definitions is omitted from this edition.
+
+Appendix G. Index of rules
+
+   Rule 3-1, Code list-enabled schema document has conformance target: Section 3.4, Code list-enabled schema document
+   Rule 3-2, Document with conformance target is a code list-enabled schema document: Section 3.4, Code list-enabled schema document
+   Rule 4-1, Content in the "cli" namespace conforms to schema: Section 4.4.1, Syntax for run-time code list binding
+   Rule 4-2, Code list URI is an absolute URI: Section 4.4.1, Syntax for run-time code list binding
+   Rule 4-3, Column identifier accompanied by code list identifier: Section 4.4.1, Syntax for run-time code list binding
+   Rule 4-4, Constraining indicator accompanied by code list identifier: Section 4.4.1, Syntax for run-time code list binding
+   Rule 4-5, Effective run-time binding.: Section 4.4.2, Run-time effective code list binding
+   Rule 4-6, Content in the "clsa" namespace conforms to schema: Section 4.5.1, Syntax for schema-time code list binding
+   Rule 4-7, Elements are xs:appinfo annotations: Section 4.5.1, Syntax for schema-time code list binding
+   Rule 4-8, Code list URI is absolute URI: Section 4.5.1, Syntax for schema-time code list binding
+   Rule 4-9, Simple code list binding to schema components: Section 4.5.1, Syntax for schema-time code list binding
+   Rule 4-10, Complex code list binding to schema components: Section 4.5.1, Syntax for schema-time code list binding
+   Rule 4-11, Attribute declaration effective simple binding: Section 4.5.2, Simple binding of schema components
+   Rule 4-12, Element declaration effective simple binding: Section 4.5.2, Simple binding of schema components
+   Rule 4-13, Type definition effective simple binding: Section 4.5.2, Simple binding of schema components
+   Rule 4-14, Element declaration effective complex binding: Section 4.5.3, Complex binding of schema components
+   Rule 4-15, Complex type definition effective complex binding: Section 4.5.3, Complex binding of schema components
+   Rule 4-16, Matches and validity for a code list binding: Section 4.6, Matches for code list bindings
+   Rule 4-17, Value comparisons based on types: Section 4.6, Matches for code list bindings
+   Rule 4-18, Code list identified by candidate code list identifiers: Section 4.6, Matches for code list bindings
+   Rule 5-1, CSV code list document is a CSV file: Section 5, Comma-separated values (CSV) code lists
+   Rule 5-2, CSV code list document has header: Section 5, Comma-separated values (CSV) code lists
+   Rule 5-3, CSV column name is not empty: Section 5, Comma-separated values (CSV) code lists
+   Rule 5-4, CSV file as a code list document: Section 5, Comma-separated values (CSV) code lists
+   Rule 6-1, Genericode code list document defined by Genericode: Section 6, Genericode code lists
+   Rule 6-2, Document with conformance target is Genericode code list document: Section 6, Genericode code lists
+   Rule 6-3, Genericode code list document is schema-valid: Section 6, Genericode code lists
+   Rule 6-4, XML Schema alternate datatypes are treated the same as built in datatypes: Section 6, Genericode code lists
+   Rule 6-5, Genericode file as a code list document: Section 6, Genericode code lists
+
