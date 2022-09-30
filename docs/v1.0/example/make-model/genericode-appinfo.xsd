@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<xs:schema 
+   targetNamespace="http://example.org/namespace/genericode-appinfo"
+   version="1"
+   xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>This schema provides appinfo annotations for Genericode documents.</xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://release.niem.gov/niem/conformanceTargets/3.0/"/>
+
+  <xs:element name="ConformanceTargets">
+    <xs:annotation>
+      <xs:documentation>An element for providing conformance targets to a Genericode document.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute ref="ct:conformanceTargets" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

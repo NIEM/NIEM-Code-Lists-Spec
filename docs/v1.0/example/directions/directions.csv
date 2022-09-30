@@ -1,0 +1,10 @@
+minimum-inclusive,maximum-exclusive,direction
+0,22.5,north
+22.5,67.5,northeast
+67.5,112.5,east
+112.5,157.5,southeast
+157.5,202.5,south
+202.5,247.5,southwest
+247.5,292.5,west
+292.5,337.5,northwest
+337.5,360,north

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog" prefer="public">
+
+  <uri 
+     name="http://reference.niem.gov/niem/specification/code-lists/1.0/code-lists-schema-appinfo/"
+     uri="code-lists-schema-appinfo.xsd"/>
+
+</catalog>
