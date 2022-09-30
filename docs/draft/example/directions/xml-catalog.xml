@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog" prefer="public">
+  <uri name="http://example.org/code-lists/example/directions/extension"
+       uri="extension.xsd"/>
+  <uri name="http://example.org/code-lists/example/directions/code-list/1"
+       uri="directions.csv"/>
+  <uri name="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+     uri="../../code-lists-instance.xsd"/>
+  <nextCatalog catalog="../niem/xml-catalog.xml"/>
+</catalog>

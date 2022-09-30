@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<xs:schema
+   ct:conformanceTargets="http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/#ExtensionSchemaDocument"
+   targetNamespace="http://example.org/code-lists/example/directions/extension"
+   version="1"
+   xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+   xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+   xmlns:ext="http://example.org/code-lists/example/directions/extension"
+   xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/" 
+   xmlns:niem-xs="http://release.niem.gov/niem/proxy/xsd/4.0/"
+   xmlns:structures="http://release.niem.gov/niem/structures/4.0/"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>An extension schema demonstrating code lists.</xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://release.niem.gov/niem/niem-core/4.0/"/>
+  <xs:import namespace="http://release.niem.gov/niem/structures/4.0/"/>
+  <xs:import namespace="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"/>
+  <xs:import namespace="http://release.niem.gov/niem/proxy/xsd/4.0/"/>
+
+  <xs:element name="DegreeAngleValue"
+              type="ext:AngleType"
+              substitutionGroup="nc:MeasureDecimalValue">
+    <xs:annotation>
+      <xs:documentation>A value for a measurement of an angle</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:complexType name="AngleType">
+    <xs:annotation>
+      <xs:documentation>A value for an angle</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:restriction base="ext:CodedDecimalType">
+        <xs:minInclusive value="0"/>
+        <xs:maxExclusive value="360"/>
+      </xs:restriction>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:element name="AngleUnitText" type="niem-xs:string" substitutionGroup="nc:AngleUnitAbstract">
+    <xs:annotation>
+      <xs:documentation>A unit of measurefor an angle.</xs:documentation>
+    </xs:annotation>
+  </xs:element>    
+
+  <xs:complexType name="CodedDecimalType">
+    <xs:annotation>
+      <xs:documentation>A data type for a decimal value mapped to a code list.</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="niem-xs:decimal">
+        <xs:attribute ref="cli:codeListURI" use="required"/>
+        <xs:attribute ref="cli:codeListColumnName" use="optional"/>
+        <xs:attribute ref="cli:codeListConstrainingIndicator" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+</xs:schema>

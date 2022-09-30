@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<xs:schema
+   ct:conformanceTargets="
+     http://reference.niem.gov/niem/specification/naming-and-design-rules/3.0/#ReferenceSchemaDocument
+     http://reference.niem.gov/niem/specification/code-lists/1.0/#SchemaDocument"
+   targetNamespace="http://example.org/namespace/extension-schema-time"
+   version="1"
+   xmlns:appinfo="http://release.niem.gov/niem/appinfo/3.0/"
+   xmlns:clsa="http://reference.niem.gov/niem/specification/code-lists/1.0/code-lists-schema-appinfo/"
+   xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+   xmlns:ext="http://example.org/namespace/extension-schema-time"
+   xmlns:nc="http://release.niem.gov/niem/niem-core/3.0/"
+   xmlns:niem-xs="http://release.niem.gov/niem/proxy/xsd/3.0/"
+   xmlns:structures="http://release.niem.gov/niem/structures/3.0/"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>An extension schema for vehicle make and model values, showing schema-time binding of XML content to a code list.</xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://release.niem.gov/niem/niem-core/3.0/"/>
+  <xs:import namespace="http://release.niem.gov/niem/proxy/xsd/3.0/"/>
+
+  <xs:element name="Vehicle" type="nc:VehicleType"
+              substitutionGroup="nc:Vehicle">
+    <xs:annotation>
+      <xs:appinfo>
+        <clsa:ComplexCodeListBinding
+            codeListURI="http://example.org/code-list/vehicle-make-model">
+          <clsa:ElementCodeListBinding elementName="nc:VehicleMake"
+                                       columnName="make"/>
+          <clsa:ElementCodeListBinding elementName="nc:VehicleModel"
+                                       columnName="model"/>
+        </clsa:ComplexCodeListBinding>
+      </xs:appinfo>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="VehicleMakeCode" type="niem-xs:token"
+              substitutionGroup="nc:VehicleMake">
+    <xs:annotation>
+      <xs:documentation>A code for a manufacturer of a vehicle.</xs:documentation>
+      <xs:appinfo>
+        <clsa:SimpleCodeListBinding
+            codeListURI="http://example.org/code-list/vehicle-make-model"
+            columnName="make"/>
+      </xs:appinfo>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="VehicleModelCode" type="niem-xs:token"
+              substitutionGroup="nc:VehicleModel">
+    <xs:annotation>
+      <xs:documentation>A code for a model of a vehicle.</xs:documentation>
+      <xs:appinfo>
+        <clsa:SimpleCodeListBinding
+            codeListURI="http://example.org/code-list/vehicle-make-model"
+            columnName="model"/>
+      </xs:appinfo>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>

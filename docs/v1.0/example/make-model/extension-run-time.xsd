@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<xs:schema
+   ct:conformanceTargets="http://reference.niem.gov/niem/specification/naming-and-design-rules/3.0/#ReferenceSchemaDocument"
+   targetNamespace="http://example.org/namespace/extension-run-time"
+   version="1"
+   xmlns:ct="http://release.niem.gov/niem/conformanceTargets/3.0/"
+   xmlns:nc="http://release.niem.gov/niem/niem-core/3.0/"
+   xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/1.0/code-lists-instance/"
+   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>An extension schema for vehicle make and model values, providing for run-time binding of XML content to a code list.</xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://release.niem.gov/niem/niem-core/3.0/"/>
+  <xs:import namespace="http://reference.niem.gov/niem/specification/code-lists/1.0/code-lists-instance/"/>
+
+  <xs:element name="VehicleMakeCode" type="cli:CodeType"
+              substitutionGroup="nc:VehicleMake">
+    <xs:annotation>
+      <xs:documentation>A code for a manufacturer of a vehicle.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="VehicleModelCode" type="cli:CodeType"
+              substitutionGroup="nc:VehicleModel">
+    <xs:annotation>
+      <xs:documentation>A code for a model of a vehicle.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>

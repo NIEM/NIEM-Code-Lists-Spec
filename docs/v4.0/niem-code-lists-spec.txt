@@ -1,8 +1,8 @@
 NIEM Code Lists Specification
 
-Version 4.0.1
+Version 4.0
 
-September 28, 2022
+November 7, 2017
 
 NIEM Technical Architecture Committee (NTAC)
 
@@ -1301,9 +1301,9 @@ Appendix A. References
 
    [CTAS]: Roberts, Webb. "NIEM Conformance Targets Attribute Specification, Version 3.0." NIEM Technical Architecture Committee, July 31, 2014. http://reference.niem.gov/niem/specification/conformance-targets-attribute/3.0/NIEM-CTAS-3.0-2014-07-31.html.
 
-   [Genericode]: Anthony B. Coates, ed. "Code List Representation (Genericode) Version 1.0, Committee Specification 02." OASIS, April 6, 2022. https://docs.oasis-open.org/codelist/genericode/v1.0/genericode-v1.0.html.
+   [Genericode]: Anthony B. Coates, ed. "Code List Representation (Genericode) Version 1.0, Committee Specification." OASIS, December 28, 2007. http://docs.oasis-open.org/codelist/cs-genericode-1.0/doc/oasis-code-list-representation-genericode.html.
 
-   [NIEM NDR]: Roberts, Webb. "National Information Exchange Model Naming and Design Rules, Version 5.0." NIEM Technical Architecture Committee, December 18, 2020. http://reference.niem.gov/niem/specification/naming-and-design-rules/5.0/niem-ndr-5.0.html.
+   [NIEM NDR]: Roberts, Webb. "National Information Exchange Model Naming and Design Rules, Version 4.0." NIEM Technical Architecture Committee, November 7, 2017. http://reference.niem.gov/niem/specification/naming-and-design-rules/4.0/niem-ndr-4.0.html.
 
    [RFC2119]: Bradner, S. (1997, March). Key words for use in RFCs to Indicate Requirement Levels. Internet Engineering Task Force. Retrieved from http://www.ietf.org/rfc/rfc2119.txt
 

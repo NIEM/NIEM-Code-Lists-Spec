@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<m:Position
+   xmlns:cli="http://reference.niem.gov/niem/specification/code-lists/4.0/code-lists-instance/"
+   xmlns:ext="http://example.org/code-lists/example/directions/extension"
+   xmlns:m="http://release.niem.gov/niem/domains/maritime/4.0/"
+   xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/">
+  <m:PositionHeadingMeasure>
+    <ext:DegreeAngleValue
+       cli:codeListURI="http://example.org/code-lists/example/directions/code-list/1"
+       cli:codeListColumnName="#range">122.31</ext:DegreeAngleValue>
+    <ext:AngleUnitText>deg</ext:AngleUnitText>
+  </m:PositionHeadingMeasure>
+</m:Position>
