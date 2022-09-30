@@ -7,6 +7,7 @@ Submit feedback as a [new issue](https://github.com/NIEM/NIEM-Code-Lists-Spec/is
 
 | Version | Published | Status | Examples and resources | Notes
 |:------- |:--------- |:------ |:---------------------------- |:-----
-**[Version 5.0 <br> (latest updates)](./draft/niem-code-lists-spec.html)** | TBD | **Latest draft** | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/dev) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/dev.zip) | Pre-alpha stage.  Most 5.0 updates are still pending.
-**[Version 4.0](./v4.0/niem-code-lists-spec.html)** | 2017 | **Current version** | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/4.0) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/4.0.zip)
+**[Version&nbsp;6.0 <br> (in&nbsp;progress)](./draft/niem-code-lists-spec.html)** | TBD | **Latest draft** | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/dev) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/dev.zip) | Minor schema updates for 5.0. <br/> Without any major changes being made, the NTAC decided to continue using the 4.0 specification for the NIEM 5.0 major release.
+**[Version&nbsp;4.0.1](./v4.0.1/niem-code-lists-spec.html)** | 2022 | **Current version** | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/4.0.1) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/4.0.1.zip) | Updated to latest version of Genericode and NIEM NDR specifications.
+**[Version 4.0](./v4.0/niem-code-lists-spec.html)** | 2017 | | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/4.0) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/4.0.zip)
 **[Version 1.0](https://reference.niem.gov/niem/specification/code-lists/1.0/niem-code-lists-1.0-2016-06-20.html)** | 2016 | | [View](https://github.com/NIEM/NIEM-Code-Lists-Spec/tree/1.0) or [download](https://github.com/NIEM/NIEM-Code-Lists-Spec/archive/1.0.zip)
